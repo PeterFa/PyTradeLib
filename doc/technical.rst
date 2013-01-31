@@ -3,7 +3,7 @@ technical -- Technical indicators
 
 .. module:: pyalgotrade.technical
 .. autoclass:: pyalgotrade.technical.DataSeriesFilter
-    :members: calculateValue, getDataSeries, getWindowSize
+    :members: calculateValue, get_data_series, getWindowSize
 
 Example
 -------

@@ -63,7 +63,7 @@
 	<li>The first two <b>{{ strategy.class }}.__init__</b> parameters are skipped since they shoud be <b>self</b> and <b>feed</b> respectively.</li>
 	<li>The rest of the <b>{{ strategy.class }}.__init__</b> parameter values are treated as integers.</li>
 	<li>Each parameter's first value must be &lt;= than the last value.</li>
-	<li>For any instrument you select you need to upload the bars first.</li>
+	<li>For any symbol you select you need to upload the bars first.</li>
 </ul>
 </p>
 <div>
@@ -90,7 +90,7 @@
 	<table>
 		<tr>
 			<td><label>Instrument:</label></td>
-			<td><input class="form-input-field" type="text" value="{{ form.instrument }}" name="instrument" size="12"/></td>
+			<td><input class="form-input-field" type="text" value="{{ form.symbol }}" name="symbol" size="12"/></td>
 		</tr>
 		<tr>
 			<td><label>First date:</label></td>

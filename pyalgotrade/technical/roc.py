@@ -25,17 +25,17 @@ class RateOfChange(technical.DataSeriesFilter):
 
 	:param dataSeries: The DataSeries instance being filtered.
 	:type dataSeries: :class:`pyalgotrade.dataseries.DataSeries`.
-	:param valuesAgo: The number of values back that a given value will compare to. Must be > 0.
-	:type valuesAgo: int.
+	:param values_ago: The number of values back that a given value will compare to. Must be > 0.
+	:type values_ago: int.
 	"""
 
-	def __init__(self, dataSeries, valuesAgo):
-		assert(valuesAgo > 0)
-		technical.DataSeriesFilter.__init__(self, dataSeries, valuesAgo + 1)
+	def __init__(self, dataSeries, values_ago):
+		assert(values_ago > 0)
+		technical.DataSeriesFilter.__init__(self, dataSeries, values_ago + 1)
 
-	def calculateValue(self, firstPos, lastPos):
-		prev = self.getDataSeries().getValueAbsolute(firstPos)
-		actual = self.getDataSeries().getValueAbsolute(lastPos)
+	def calculateValue(self, first_idx, last_idx):
+		prev = self.get_data_series().get_value_absolute(first_idx)
+		actual = self.get_data_series().get_value_absolute(last_idx)
 
 		if actual is None or prev is None or prev == 0:
 			return None

@@ -19,24 +19,23 @@
 """
 
 class Database:
-	def addBars(self, bars, frequency):
-		for instrument in bars.getInstruments():
-			bar = bars.getBar(instrument)
-			self.addBar(instrument, bar, frequency)
+    def add_bars(self, bars, frequency):
+        for symbol in bars.get_symbols():
+            bar = bars.get_bar(symbol)
+            self.add_bar(symbol, bar, frequency)
 
-	def addBarsFromFeed(self, feed):
-		feed.start()
-		try:
-			for bars in feed:
-				if bars:
-					self.addBars(bars, feed.getFrequency())
-		finally:
-			feed.stop()
-			feed.join()
+    def add_barsFromFeed(self, feed):
+        feed.start()
+        try:
+            for bars in feed:
+                if bars:
+                    self.add_bars(bars, feed.get_frequency())
+        finally:
+            feed.stop()
+            feed.join()
 
-	def addBar(self, instrument, bar, frequency):
-		raise NotImplementedError()
+    def add_bar(self, symbol, bar, frequency):
+        raise NotImplementedError()
 
-	def getBars(self, instrument, frequency, timezone = None, fromDateTime = None, toDateTime = None):
-		raise NotImplementedError()
-
+    def get_bars(self, symbol, frequency, timezone=None, from_dateTime=None, to_date_time=None):
+        raise NotImplementedError()

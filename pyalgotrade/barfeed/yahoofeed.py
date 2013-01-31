@@ -32,36 +32,33 @@ import types
 # The csv Date column must have the following format: YYYY-MM-DD
 
 class RowParser(csvfeed.YahooRowParser):
-	pass
+    pass
 
 class Feed(csvfeed.YahooFeed):
-	"""A :class:`pyalgotrade.barfeed.csvfeed.BarFeed` that loads bars from CSV files downloaded from Yahoo! Finance.
+    """A :class:`pyalgotrade.barfeed.csvfeed.BarFeed` that loads bars from CSV files downloaded from Yahoo! Finance.
 
-	:param timezone: The default timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
-	:type timezone: A pytz timezone.
+    :param timezone: The default timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
+    :type timezone: A pytz timezone.
 
-	.. note::
-		Yahoo! Finance csv files lack timezone information.
-		When working with multiple instruments:
+    .. note::
+        Yahoo! Finance csv files lack timezone information.
+        When working with multiple symbols:
 
-			* If all the instruments loaded are in the same timezone, then the timezone parameter may not be specified.
-			* If any of the instruments loaded are from different timezones, then the timezone parameter must be set.
-	"""
+            * If all the symbols loaded are in the same timezone, then the timezone parameter may not be specified.
+            * If any of the symbols loaded are from different timezones, then the timezone parameter must be set.
+    """
+    def __init__(self, timezone=None):
+        csvfeed.YahooFeed.__init__(self, timezone, True)
 
-	def __init__(self, timezone = None):
-		csvfeed.YahooFeed.__init__(self, timezone, True)
-	
-	def addBarsFromCSV(self, instrument, path, timezone = None):
-		"""Loads bars for a given instrument from a CSV formatted file.
-		The instrument gets registered in the bar feed.
-		
-		:param instrument: Instrument identifier.
-		:type instrument: string.
-		:param path: The path to the file.
-		:type path: string.
-		:param timezone: The timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
-		:type timezone: A pytz timezone.
-		"""
+    def add_bars_from_csv(self, symbol, path, timezone=None):
+        """Loads bars for a given symbol from a CSV formatted file.
+        The symbol gets registered in the bar feed.
 
-		csvfeed.YahooFeed.addBarsFromCSV(self, instrument, path, timezone)
-
+        :param symbol: Instrument identifier.
+        :type symbol: string.
+        :param path: The path to the file.
+        :type path: string.
+        :param timezone: The timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
+        :type timezone: A pytz timezone.
+        """
+        csvfeed.YahooFeed.add_bars_from_csv(self, symbol, path, timezone)

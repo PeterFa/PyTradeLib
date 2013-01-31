@@ -24,188 +24,186 @@ from pyalgotrade import bar
 from pyalgotrade import warninghelpers
 
 class Frequency:
-	# SECOND	= 1
-	MINUTE	= 2
-	# HOUR	= 3
-	DAY		= 4
+    # SECOND	= 1
+    MINUTE	= 2
+    # HOUR	= 3
+    DAY		= 4
 
 # This class is responsible for:
 # - Managing and upating BarDataSeries instances.
 # - Event dispatching
 #
 # Subclasses should implement:
-# - getNextBars
+# - get_next_bars
 #
 # THIS IS A VERY BASIC CLASS AND IN WON'T DO ANY VERIFICATIONS OVER THE BARS RETURNED.
 
 class BasicBarFeed:
-	def __init__(self, frequency):
-		self.__ds = {}
-		self.__defaultInstrument = None
-		self.__newBarsEvent = observer.Event()
-		self.__currentBars = None
-		self.__lastBars = {}
-		self.__frequency = frequency
+    def __init__(self, frequency):
+        self.__ds = {}
+        self.__default_symbol = None
+        self.__new_bars_event = observer.Event()
+        self.__curent_bars = None
+        self.__last_bars = {}
+        self.__frequency = frequency
 
-	def __getNextBarsAndUpdateDS(self):
-		bars = self.getNextBars()
-		if bars != None:
-			self.__currentBars = bars
-			# Update self.__lastBars and the dataseries.
-			for instrument in bars.getInstruments():
-				bar_ = bars.getBar(instrument)
-				self.__lastBars[instrument] = bar_ 
-				self.__ds[instrument].appendValue(bar_)
-		return bars
+    def __get_next_bars_and_update_ds(self):
+        bars = self.get_next_bars()
+        if bars != None:
+            self.__curent_bars = bars
+            # Update self.__last_bars and the dataseries.
+            for symbol in bars.get_symbols():
+                bar_ = bars.get_bar(symbol)
+                self.__last_bars[symbol] = bar_
+                self.__ds[symbol].append_value(bar_)
+        return bars
 
-	def __iter__(self):
-		return self
+    def __iter__(self):
+        return self
 
-	def next(self):
-		if self.stopDispatching():
-			raise StopIteration()
-		return self.__getNextBarsAndUpdateDS()
+    def next(self):
+        if self.stop_dispatching():
+            raise StopIteration()
+        return self.__get_next_bars_and_update_ds()
 
-	def getFrequency(self):
-		return self.__frequency
+    def get_frequency(self):
+        return self.__frequency
 
-	def getCurrentBars(self):
-		"""Returns the current :class:`pyalgotrade.bar.Bars`."""
-		return self.__currentBars
+    def get_current_bars(self):
+        """Returns the current :class:`pyalgotrade.bar.Bars`."""
+        return self.__curent_bars
 
-	def getLastBars(self):
-		warninghelpers.deprecation_warning("getLastBars will be deprecated in the next version. Please use getCurrentBars instead.", stacklevel=2)
-		return self.getCurrentBars()
+    def get_last_bars(self):
+        warninghelpers.deprecation_warning("get_last_bars will be deprecated in the next version. Please use get_current_bars instead.", stacklevel=2)
+        return self.get_current_bars()
 
-	def getLastBar(self, instrument):
-		"""Returns the last :class:`pyalgotrade.bar.Bar` for a given instrument, or None."""
-		return self.__lastBars.get(instrument, None)
+    def get_last_bar(self, symbol):
+        """Returns the last :class:`pyalgotrade.bar.Bar` for a given symbol, or None."""
+        return self.__last_bars.get(symbol, None)
 
-	def start(self):
-		raise NotImplementedError()
+    def start(self):
+        raise NotImplementedError()
 
-	def stop(self):
-		raise NotImplementedError()
+    def stop(self):
+        raise NotImplementedError()
 
-	def join(self):
-		raise NotImplementedError()
+    def join(self):
+        raise NotImplementedError()
 
-	# Return True if there are not more events to dispatch.
-	def stopDispatching(self):
-		raise NotImplementedError()
+    # Return True if there are not more events to dispatch.
+    def stop_dispatching(self):
+        raise NotImplementedError()
 
-	# Subclasses should implement this and return a pyalgotrade.bar.Bars or None if there are no bars.
-	def getNextBars(self):
-		raise NotImplementedError()
+    # Subclasses should implement this and return a pyalgotrade.bar.Bars or None if there are no bars.
+    def get_next_bars(self):
+        raise NotImplementedError()
 
-	def getNewBarsEvent(self):
-		return self.__newBarsEvent
+    def get_new_bars_event(self):
+        return self.__new_bars_event
 
-	def getDefaultInstrument(self):
-		"""Returns the default instrument."""
-		return self.__defaultInstrument
+    def get_default_symbol(self):
+        """Returns the default symbol."""
+        return self.__default_symbol
 
-	# Dispatch events.
-	def dispatch(self):
-		bars = self.__getNextBarsAndUpdateDS()
-		if bars != None:
-			self.__newBarsEvent.emit(bars)
+    # Dispatch events.
+    def dispatch(self):
+        bars = self.__get_next_bars_and_update_ds()
+        if bars != None:
+            self.__new_bars_event.emit(bars)
 
-	def getRegisteredInstruments(self):
-		"""Returns a list of registered intstrument names."""
-		return self.__ds.keys()
+    def get_registered_symbols(self):
+        """Returns a list of registered intstrument names."""
+        return self.__ds.keys()
 
-	def registerInstrument(self, instrument):
-		self.__defaultInstrument = instrument
-		if instrument not in self.__ds:
-			self.__ds[instrument] = dataseries.BarDataSeries()
+    def register_symbol(self, symbol):
+        self.__default_symbol = symbol
+        if symbol not in self.__ds:
+            self.__ds[symbol] = dataseries.BarDataSeries()
 
-	def getDataSeries(self, instrument = None):
-		"""Returns the :class:`pyalgotrade.dataseries.BarDataSeries` for a given instrument.
+    def get_data_series(self, symbol = None):
+        """Returns the :class:`pyalgotrade.dataseries.BarDataSeries` for a given symbol.
 
-		:param instrument: Instrument identifier. If None, the default instrument is returned.
-		:type instrument: string.
-		:rtype: :class:`pyalgotrade.dataseries.BarDataSeries`.
-		"""
-		if instrument == None:
-			instrument = self.__defaultInstrument
-		return self.__ds[instrument]
+        :param symbol: Instrument identifier. If None, the default symbol is returned.
+        :type symbol: string.
+        :rtype: :class:`pyalgotrade.dataseries.BarDataSeries`.
+        """
+        if symbol == None:
+            symbol = self.__default_symbol
+        return self.__ds[symbol]
 
-	def __getitem__(self, instrument):
-		"""Returns the :class:`pyalgotrade.dataseries.BarDataSeries` for a given instrument.
-		If the instrument is not found an exception is raised."""
-		return self.__ds[instrument]
+    def __getitem__(self, symbol):
+        """Returns the :class:`pyalgotrade.dataseries.BarDataSeries` for a given symbol.
+        If the symbol is not found an exception is raised."""
+        return self.__ds[symbol]
 
-	def __contains__(self, instrument):
-		"""Returns True if a :class:`pyalgotrade.dataseries.BarDataSeries` for the given instrument is available."""
-		return instrument in self.__ds
+    def __contains__(self, symbol):
+        """Returns True if a :class:`pyalgotrade.dataseries.BarDataSeries` for the given symbol is available."""
+        return symbol in self.__ds
 
 # This class is responsible for:
-# - Checking the pyalgotrade.bar.Bar objects returned by fetchNextBars and building pyalgotrade.bar.Bars objects.
+# - Checking the pyalgotrade.bar.Bar objects returned by fetch_next_bars and building pyalgotrade.bar.Bars objects.
 #
 # Subclasses should implement:
-# - fetchNextBars
+# - fetch_next_bars
 
 class BarFeed(BasicBarFeed):
-	"""Base class for :class:`pyalgotrade.bar.Bars` providing feeds.
+    """Base class for :class:`pyalgotrade.bar.Bars` providing feeds.
 
-	:param frequency: The bars frequency.
-	:type frequency: barfeed.Frequency.MINUTE or barfeed.Frequency.DAY.
+    :param frequency: The bars frequency.
+    :type frequency: barfeed.Frequency.MINUTE or barfeed.Frequency.DAY.
 
-	.. note::
-		This is a base class and should not be used directly.
-	"""
-	def __init__(self, frequency):
-		BasicBarFeed.__init__(self, frequency)
-		self.__prevDateTime = None
+    .. note::
+        This is a base class and should not be used directly.
+    """
+    def __init__(self, frequency):
+        BasicBarFeed.__init__(self, frequency)
+        self.__prev_date_time = None
 
-	# Override to return a map from instrument names to bars or None if there is no data. All bars datetime must be equal.
-	def fetchNextBars(self):
-		raise NotImplementedError()
+    # Override to return a map from symbol names to bars or None if there is no data. All bars datetime must be equal.
+    def fetch_next_bars(self):
+        raise NotImplementedError()
 
-	def getNextBars(self):
-		"""Returns the next :class:`pyalgotrade.bar.Bars` in the feed or None if there are no bars."""
+    def get_next_bars(self):
+        """Returns the next :class:`pyalgotrade.bar.Bars` in the feed or None if there are no bars."""
 
-		barDict = self.fetchNextBars()
-		if barDict == None:
-			return None
+        bar_dict = self.fetch_next_bars()
+        if bar_dict == None:
+            return None
 
-		# This will check for incosistent datetimes between bars.
-		ret = bar.Bars(barDict)
+        # This will check for incosistent datetimes between bars.
+        ret = bar.Bars(bar_dict)
 
-		# Check that current bar datetimes are greater than the previous one.
-		if self.__prevDateTime != None and self.__prevDateTime >= ret.getDateTime():
-			raise Exception("Bar data times are not in order. Previous datetime was %s and current datetime is %s" % (self.__prevDateTime, ret.getDateTime()))
-		self.__prevDateTime = ret.getDateTime()
+        # Check that current bar datetimes are greater than the previous one.
+        if self.__prev_date_time != None and self.__prev_date_time >= ret.get_date_time():
+            raise Exception("Bar data times are not in order. Previous datetime was %s and current datetime is %s" % (self.__prev_date_time, ret.get_date_time()))
+        self.__prev_date_time = ret.get_date_time()
 
-		return ret
+        return ret
 
 # This class is used by the optimizer module. The barfeed is already built on the server side, and the bars are sent back to workers.
 class OptimizerBarFeed(BasicBarFeed):
-	def __init__(self, frequency, instruments, bars):
-		BasicBarFeed.__init__(self, frequency)
-		for instrument in instruments:
-			self.registerInstrument(instrument)
-		self.__bars = bars
-		self.__nextBar = 0
+    def __init__(self, frequency, symbols, bars):
+        BasicBarFeed.__init__(self, frequency)
+        for symbol in symbols:
+            self.register_symbol(symbol)
+        self.__bars = bars
+        self.__next_bar = 0
 
-	def start(self):
-		pass
+    def start(self):
+        pass
 
-	def stop(self):
-		pass
+    def stop(self):
+        pass
 
-	def join(self):
-		pass
+    def join(self):
+        pass
 
-	def getNextBars(self):
-		ret = None
-		if self.__nextBar < len(self.__bars):
-			ret = self.__bars[self.__nextBar]
-			self.__nextBar += 1
-		return ret
+    def get_next_bars(self):
+        ret = None
+        if self.__next_bar < len(self.__bars):
+            ret = self.__bars[self.__next_bar]
+            self.__next_bar += 1
+        return ret
 
-	def stopDispatching(self):
-		return self.__nextBar >= len(self.__bars)
-
-
+    def stop_dispatching(self):
+        return self.__next_bar >= len(self.__bars)

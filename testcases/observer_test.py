@@ -23,72 +23,72 @@ import unittest
 from pyalgotrade import observer
 
 class ObserverTestCase(unittest.TestCase):
-	def testEmitOrder(self):
-		handlersData = []
+    def testEmitOrder(self):
+        handlersData = []
 
-		def handler3():
-			handlersData.append(3)
+        def handler3():
+            handlersData.append(3)
 
-		def handler1():
-			handlersData.append(1)
+        def handler1():
+            handlersData.append(1)
 
-		def handler2():
-			handlersData.append(2)
+        def handler2():
+            handlersData.append(2)
 
-		event = observer.Event()
-		event.subscribe(handler1)
-		event.subscribe(handler2)
-		event.subscribe(handler3)
-		event.emit()
-		self.assertTrue(handlersData == [1, 2, 3])
+        event = observer.Event()
+        event.subscribe(handler1)
+        event.subscribe(handler2)
+        event.subscribe(handler3)
+        event.emit()
+        self.assertTrue(handlersData == [1, 2, 3])
 
-		handlersData = []
-		event = observer.Event()
-		event.subscribe(handler3)
-		event.subscribe(handler2)
-		event.subscribe(handler1)
-		event.emit()
-		self.assertTrue(handlersData == [3, 2, 1])
+        handlersData = []
+        event = observer.Event()
+        event.subscribe(handler3)
+        event.subscribe(handler2)
+        event.subscribe(handler1)
+        event.emit()
+        self.assertTrue(handlersData == [3, 2, 1])
 
-	def testDuplicateHandlers(self):
-		def handler1():
-			handlersData.append(1)
+    def testDuplicateHandlers(self):
+        def handler1():
+            handlersData.append(1)
 
-		handlersData = []
-		event = observer.Event()
-		event.subscribe(handler1)
-		event.subscribe(handler1)
-		event.emit()
-		self.assertTrue(handlersData == [1])
+        handlersData = []
+        event = observer.Event()
+        event.subscribe(handler1)
+        event.subscribe(handler1)
+        event.emit()
+        self.assertTrue(handlersData == [1])
 
-	def testReentrancy(self):
-		handlersData = []
-		event = observer.Event()
+    def testReentrancy(self):
+        handlersData = []
+        event = observer.Event()
 
-		def handler2():
-			handlersData.append(2)
+        def handler2():
+            handlersData.append(2)
 
-		def handler1():
-			handlersData.append(1)
-			event.subscribe(handler2)
-			event.subscribe(handler1)
+        def handler1():
+            handlersData.append(1)
+            event.subscribe(handler2)
+            event.subscribe(handler1)
 
-		event.subscribe(handler1)
-		event.emit()
-		self.assertTrue(handlersData == [1])
-		event.emit()
-		self.assertTrue(handlersData == [1, 1, 2])
-		event.unsubscribe(handler1)
-		event.emit()
-		self.assertTrue(handlersData == [1, 1, 2, 2])
-		event.unsubscribe(handler2)
-		event.emit()
-		self.assertTrue(handlersData == [1, 1, 2, 2])
+        event.subscribe(handler1)
+        event.emit()
+        self.assertTrue(handlersData == [1])
+        event.emit()
+        self.assertTrue(handlersData == [1, 1, 2])
+        event.unsubscribe(handler1)
+        event.emit()
+        self.assertTrue(handlersData == [1, 1, 2, 2])
+        event.unsubscribe(handler2)
+        event.emit()
+        self.assertTrue(handlersData == [1, 1, 2, 2])
 
 def getTestCases():
-	ret = []
-	ret.append(ObserverTestCase("testEmitOrder"))
-	ret.append(ObserverTestCase("testDuplicateHandlers"))
-	ret.append(ObserverTestCase("testReentrancy"))
-	return ret
+    ret = []
+    ret.append(ObserverTestCase("testEmitOrder"))
+    ret.append(ObserverTestCase("testDuplicateHandlers"))
+    ret.append(ObserverTestCase("testReentrancy"))
+    return ret
 

@@ -85,9 +85,9 @@ class RSI(technical.DataSeriesFilter):
 	def __getAverages(self, pos):
 		ret =  self.__averages.get(pos, None)
 		if ret is None:
-			if pos == self.getFirstValidPos():
+			if pos == self.get_first_valid_index():
 				# First averages
-				values = self.getDataSeries().getValuesAbsolute(pos - self.__period, pos)
+				values = self.get_data_series().get_values_absolute(pos - self.__period, pos)
 				assert(values is not None)
 				ret = avg_gain_loss(values)
 			else:
@@ -96,9 +96,9 @@ class RSI(technical.DataSeriesFilter):
 				assert(prevAvgGain != None)
 				assert(prevAvgLoss != None)
 
-				prevValue = self.getDataSeries().getValueAbsolute(pos-1)
+				prevValue = self.get_data_series().get_value_absolute(pos-1)
 				assert(prevValue != None)
-				currValue = self.getDataSeries().getValueAbsolute(pos)
+				currValue = self.get_data_series().get_value_absolute(pos)
 				assert(currValue != None)
 				currGain, currLoss = gain_loss_one(prevValue, currValue)
 
@@ -110,8 +110,8 @@ class RSI(technical.DataSeriesFilter):
 
 		return ret
 
-	def calculateValue(self, firstPos, lastPos):
-		avgGain, avgLoss = self.__getAverages(lastPos)
+	def calculateValue(self, first_idx, last_idx):
+		avgGain, avgLoss = self.__getAverages(last_idx)
 
 		if avgLoss == 0:
 			return 100

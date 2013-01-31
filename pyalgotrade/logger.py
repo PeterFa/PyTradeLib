@@ -21,7 +21,7 @@
 import logging
 import threading
 
-factoryLock = threading.Lock()
+factory_lock = threading.Lock()
 loggers = {}
 
 # Defaults
@@ -31,30 +31,30 @@ file_log = None # File name
 console_log = True
 
 def __set_defaults(handler):
-	handler.setFormatter(logging.Formatter(log_format))
-	# handler.setLevel(level)
+    handler.setFormatter(logging.Formatter(log_format))
+    # handler.setLevel(level)
 
 def __build_logger(name):
-	ret = logging.getLogger(name)
-	ret.setLevel(level)
+    ret = logging.getLogger(name)
+    ret.setLevel(level)
 
-	if file_log != None:
-		fileHandler = logging.FileHandler(file_log)
-		__set_defaults(fileHandler)
-		ret.addHandler(fileHandler)
+    if file_log != None:
+        file_handler = logging.FileHandler(file_log)
+        __set_defaults(file_handler)
+        ret.addHandler(file_handler)
 
-	if console_log:
-		consoleHandler = logging.StreamHandler()
-		__set_defaults(consoleHandler)
-		ret.addHandler(consoleHandler)
+    if console_log:
+        console_handler = logging.StreamHandler()
+        __set_defaults(console_handler)
+        ret.addHandler(console_handler)
 
-	return ret
+    return ret
 
-def getLogger(name):
-	with factoryLock:
-		ret = loggers.get(name)
-		if ret == None:
-			ret = __build_logger(name)
-			loggers[name] = ret
-	return ret
+def get_logger(name):
+    with factory_lock:
+        ret = loggers.get(name)
+        if ret == None:
+            ret = __build_logger(name)
+            loggers[name] = ret
+    return ret
 

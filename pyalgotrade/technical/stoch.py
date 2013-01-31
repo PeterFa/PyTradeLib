@@ -22,65 +22,65 @@ from pyalgotrade import technical
 from pyalgotrade.technical import ma
 
 class BarWrapper:
-	def __init__(self, useAdjusted):
-		self.__useAdjusted = useAdjusted
+	def __init__(self, use_adjusted):
+		self.__use_adjusted = use_adjusted
 
-	def getLow(self, bar_):
-		if self.__useAdjusted:
-			return bar_.getAdjLow()
+	def get_low(self, bar_):
+		if self.__use_adjusted:
+			return bar_.get_adj_low()
 		else:
-			return bar_.getLow()
+			return bar_.get_low()
 
-	def getHigh(self, bar_):
-		if self.__useAdjusted:
-			return bar_.getAdjHigh()
+	def get_high(self, bar_):
+		if self.__use_adjusted:
+			return bar_.get_adj_high()
 		else:
-			return bar_.getHigh()
+			return bar_.get_high()
 
-	def getClose(self, bar_):
-		if self.__useAdjusted:
-			return bar_.getAdjClose()
+	def get_close(self, bar_):
+		if self.__use_adjusted:
+			return bar_.get_adj_close()
 		else:
-			return bar_.getClose()
+			return bar_.get_close()
 
 def get_low_high_values(barWrapper, bars):
 	currBar = bars[0]
-	lowestLow = barWrapper.getLow(currBar)
-	highestHigh = barWrapper.getHigh(currBar)
+	lowestLow = barWrapper.get_low(currBar)
+	highestHigh = barWrapper.get_high(currBar)
 	for i in range(len(bars)):
 		currBar = bars[i]
-		lowestLow = min(lowestLow, barWrapper.getLow(currBar))
-		highestHigh = max(highestHigh, barWrapper.getHigh(currBar))
+		lowestLow = min(lowestLow, barWrapper.get_low(currBar))
+		highestHigh = max(highestHigh, barWrapper.get_high(currBar))
 	return (lowestLow, highestHigh)
 
 class StochasticOscillator(technical.DataSeriesFilter):
 	"""Stochastic Oscillator filter as described in http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:stochastic_oscillato.
 	Note that the value returned by this filter is %K. To access %D use :meth:`getD`.
 
-	:param barDataSeries: The BarDataSeries instance being filtered.
-	:type barDataSeries: :class:`pyalgotrade.dataseries.BarDataSeries`.
+	:param bar_ds: The BarDataSeries instance being filtered.
+	:type bar_ds: :class:`pyalgotrade.dataseries.BarDataSeries`.
 	:param period: The period. Must be > 1.
 	:type period: int.
 	:param dSMAPeriod: The %D SMA period. Must be > 1.
 	:type dSMAPeriod: int.
-	:param useAdjustedValues: True to use adjusted Low/High/Close values.
-	:type useAdjustedValues: boolean.
+	:param use_adjustedValues: True to use adjusted Low/High/Close values.
+	:type use_adjustedValues: boolean.
 	"""
 
-	def __init__(self, barDataSeries, period, dSMAPeriod = 3, useAdjustedValues = False):
+	def __init__(self, bar_ds, period, dSMAPeriod = 3, use_adjustedValues = False):
 		assert(period > 1)
 		assert(dSMAPeriod > 1)
-		technical.DataSeriesFilter.__init__(self, barDataSeries, period)
+		technical.DataSeriesFilter.__init__(self, bar_ds, period)
 		self.__d = ma.SMA(self, dSMAPeriod)
-		self.__barWrapper = BarWrapper(useAdjustedValues)
+		self.__barWrapper = BarWrapper(use_adjustedValues)
 
-	def calculateValue(self, firstPos, lastPos):
-		bars = self.getDataSeries().getValuesAbsolute(firstPos, lastPos)
+	def calculateValue(self, first_idx, last_idx):
+		bars = self.get_data_series().get_values_absolute(first_idx, last_idx)
 		if bars == None:
 			return None
 
 		lowestLow, highestHigh = get_low_high_values(self.__barWrapper, bars)
-		currentClose = self.__barWrapper.getClose(bars[-1])
+		currentClose = self.__barWrapper.get_close(bars[-1])
 		return (currentClose - lowestLow) / float(highestHigh - lowestLow) * 100
 
 	def getD(self):

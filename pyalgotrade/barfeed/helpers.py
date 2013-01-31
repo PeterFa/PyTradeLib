@@ -20,28 +20,27 @@
 
 # Calculates session close based on days.
 # When the current bar is the last bar for the day, or the last bar in the feed, the session is closed.
-def session_close(currentBar, nextBar):
-	ret = False
-	if nextBar == None:
-		ret = True
-	elif currentBar.getDateTime().date() != nextBar.getDateTime().date():
-		ret = True
-	return ret
+def session_close(current_bar, next_bar):
+    ret = False
+    if next_bar == None:
+        ret = True
+    elif current_bar.get_date_time().date() != next_bar.get_date_time().date():
+        ret = True
+    return ret
 
 # Sets session close and bars till session close properties to bars in a sequence. 
-def set_session_close_attributes(barSeq, sessionCloseStrategy = None):
-	for i in xrange(1, len(barSeq)):
-		if session_close(barSeq[i-1], barSeq[i]):
-			barSeq[i-1].setSessionClose(True)
-			# Flag the penultimate bar if:
-			# - There is a penultimate bar
-			# - The penultimate and last bar belong to the same session.
-			if i-2 >= 0 and session_close(barSeq[i-2], barSeq[i-1]) == False:
-				barSeq[i-2].setBarsTillSessionClose(1)
+def set_session_close_attributes(bar_seq, session_close_strategy=None):
+    for i in xrange(1, len(bar_seq)):
+        if session_close(bar_seq[i-1], bar_seq[i]):
+            bar_seq[i-1].set_session_close(True)
+            # Flag the penultimate bar if:
+            # - There is a penultimate bar
+            # - The penultimate and last bar belong to the same session.
+            if i-2 >= 0 and session_close(bar_seq[i-2], bar_seq[i-1]) == False:
+                bar_seq[i-2].set_bars_until_session_close(1)
 
-	# Deal with the last bars in the feed.
-	if len(barSeq):
-		barSeq[-1].setSessionClose(True)
-		if len(barSeq) > 1:
-			barSeq[-2].setBarsTillSessionClose(1)
-
+    # Deal with the last bars in the feed.
+    if len(bar_seq):
+        bar_seq[-1].set_session_close(True)
+        if len(bar_seq) > 1:
+            bar_seq[-2].set_bars_until_session_close(1)

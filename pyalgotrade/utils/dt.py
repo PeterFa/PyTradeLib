@@ -22,31 +22,28 @@ import datetime
 import calendar
 import pytz
 
-def datetime_is_naive(dateTime):
-	""" Returns True if dateTime is naive."""
-	return dateTime.tzinfo is None or dateTime.tzinfo.utcoffset(dateTime) is None
+def datetime_is_naive(date_time):
+    """ Returns True if date_time is naive."""
+    return date_time.tzinfo is None or date_time.tzinfo.utcoffset(date_time) is None
 
-def localize(dateTime, timeZone):
-	"""Returns a datetime adjusted to a timezone:
+def localize(date_time, timeZone):
+    """Returns a datetime adjusted to a timezone:
 
-	 * If dateTime is a naive datetime (datetime with no timezone information), timezone information is added but date and time remains the same.
-	 * If dateTime is not a naive datetime, a datetime object with new tzinfo attribute is returned, adjusting the date and time data so the result is the same UTC time.
-	"""
+    * If date_time is a naive datetime (datetime with no timezone information), timezone information is added but date and time remains the same.
+    * If date_time is not a naive datetime, a datetime object with new tzinfo attribute is returned, adjusting the date and time data so the result is the same UTC time.
+    """
 
-	if datetime_is_naive(dateTime):
-		ret = timeZone.localize(dateTime)
-	else:
-		ret = dateTime.astimezone(timeZone)
-	return ret
+    if datetime_is_naive(date_time):
+        ret = timeZone.localize(date_time)
+    else:
+        ret = date_time.astimezone(timeZone)
+    return ret
 
-def datetime_to_timestamp(dateTime):
-	""" Converts a datetime.datetime to a UTC timestamp."""
-	return calendar.timegm(dateTime.utctimetuple())
+def datetime_to_timestamp(date_time):
+    """ Converts a datetime.datetime to a UTC timestamp."""
+    return calendar.timegm(date_time.utctimetuple())
 
-def timestamp_to_datetime(timeStamp):
-	""" Converts a UTC timestamp to a datetime.datetime."""
-	ret = datetime.datetime.utcfromtimestamp(timeStamp)
-	return localize(ret, pytz.utc)
-
-
-
+def timestamp_to_datetime(time_stamp):
+    """ Converts a UTC timestamp to a datetime.datetime."""
+    ret = datetime.datetime.utcfromtimestamp(time_stamp)
+    return localize(ret, pytz.utc)

@@ -27,9 +27,9 @@ class Ratio(technical.DataSeriesFilter):
 	def __init__(self, dataSeries):
 		technical.DataSeriesFilter.__init__(self, dataSeries, 2)
 
-	def calculateValue(self, firstPos, lastPos):
-		prev = self.getDataSeries().getValueAbsolute(firstPos)
-		actual = self.getDataSeries().getValueAbsolute(lastPos)
+	def calculateValue(self, first_idx, last_idx):
+		prev = self.get_data_series().get_value_absolute(first_idx)
+		actual = self.get_data_series().get_value_absolute(last_idx)
 
 		if actual is None or prev is None or prev == 0:
 			return None

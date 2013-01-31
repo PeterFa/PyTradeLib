@@ -29,37 +29,37 @@ import pyalgotrade.logger
 
 import tempfile
 
-logger = pyalgotrade.logger.getLogger("update-db")
+logger = pyalgotrade.logger.get_logger("update-db")
 
 def download_bars(db, symbol, year, timezone):
-	try:
-		# Download bars.
-		csvFile = tempfile.NamedTemporaryFile()
-		csvFile.write(yahoofinance.get_daily_csv(symbol, year))
-		csvFile.flush()
+    try:
+        # Download bars.
+        csvFile = tempfile.NamedTemporaryFile()
+        csvFile.write(yahoofinance.get_daily_csv(symbol, year))
+        csvFile.flush()
 
-		# Load them into a feed.
-		feed = yahoofeed.Feed()
-		feed.addBarsFromCSV(symbol, csvFile.name, timezone)
+        # Load them into a feed.
+        feed = yahoofeed.Feed()
+        feed.add_bars_from_csv(symbol, csvFile.name, timezone)
 
-		# Put them in the db.
-		db.addBarsFromFeed(feed)
-	except Exception, e:
-		logger.error("Error downloading %s bars for %s: %s" % (symbol, year, str(e)))
+        # Put them in the db.
+        db.add_barsFromFeed(feed)
+    except Exception, e:
+        logger.error("Error downloading %s bars for %s: %s" % (symbol, year, str(e)))
 
-def update_bars(dbFilePath, symbolsFile, timezone, fromYear, toYear):
-	db = sqlitefeed.Database(dbFilePath)
-	for symbol in open(symbolsFile, "r"):
-		symbol = symbol.strip()
-		logger.info("Downloading %s bars" % (symbol))
-		for year in range(fromYear, toYear+1):
-			download_bars(db, symbol, year, timezone)
+def update_bars(db_file_path, symbolsFile, timezone, from_year, to_year):
+    db = sqlitefeed.Database(db_file_path)
+    for symbol in open(symbolsFile, "r"):
+        symbol = symbol.strip()
+        logger.info("Downloading %s bars" % (symbol))
+        for year in range(from_year, to_year+1):
+            download_bars(db, symbol, year, timezone)
 
 def main():
-	fromYear = 2000
-	toYear = 2012
-	update_bars("yahoofinance.sqlite", "nasdaq-symbols.txt", marketsession.NASDAQ.timezone, fromYear, toYear)
-	update_bars("yahoofinance.sqlite", "nyse-symbols.txt", marketsession.NYSE.timezone, fromYear, toYear)
+    from_year = 2000
+    to_year = 2012
+    update_bars("yahoofinance.sqlite", "nasdaq-symbols.txt", marketsession.NASDAQ.timezone, from_year, to_year)
+    update_bars("yahoofinance.sqlite", "nyse-symbols.txt", marketsession.NYSE.timezone, from_year, to_year)
 
 main()
 

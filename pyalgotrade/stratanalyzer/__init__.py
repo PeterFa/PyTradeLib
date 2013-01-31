@@ -19,19 +19,18 @@
 """
 
 class StrategyAnalyzer:
-	"""Base class for strategy analyzers.
+    """Base class for strategy analyzers.
 
-	.. note::
+    .. note::
 
-		This is a base class and should not be used directly.
-	"""
+        This is a base class and should not be used directly.
+    """
 
-	def beforeAttach(self, strat):
-		pass
+    def before_attach(self, strat):
+        pass
 
-	def attached(self, strat):
-		pass
+    def attached(self, strat):
+        pass
 
-	def beforeOnBars(self, strat):
-		pass
-
+    def before_on_bars(self, strat):
+        pass

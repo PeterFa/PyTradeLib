@@ -40,91 +40,93 @@ import datetime
 #
 # The exported data will be in the UTC time zone.
 
+
 class Frequency:
-	MINUTE = pyalgotrade.barfeed.Frequency.MINUTE
-	DAILY = pyalgotrade.barfeed.Frequency.DAY
+    MINUTE = pyalgotrade.barfeed.Frequency.MINUTE
+    DAILY = pyalgotrade.barfeed.Frequency.DAY
+
 
 class RowParser(csvfeed.RowParser):
-	def __init__(self, frequency, dailyBarTime, timezone = None):
-		self.__frequency = frequency
-		self.__dailyBarTime = dailyBarTime
-		self.__timezone = timezone
+    def __init__(self, frequency, daily_bar_time, timezone=None):
+        self.__frequency = frequency
+        self.__daily_bar_time = daily_bar_time
+        self.__timezone = timezone
 
-	def __parseDateTime(self, dateTime):
-		ret = None
-		if self.__frequency == pyalgotrade.barfeed.Frequency.MINUTE:
-			ret = datetime.datetime.strptime(dateTime, "%Y%m%d %H%M%S")
-		elif self.__frequency == pyalgotrade.barfeed.Frequency.DAY:
-			ret = datetime.datetime.strptime(dateTime, "%Y%m%d")
-			# Time on CSV files is empty. If told to set one, do it.
-			if self.__dailyBarTime != None:
-				ret = datetime.datetime.combine(ret, self.__dailyBarTime)
-		else:
-			assert(False)
+    def __parse_date_time(self, date_time):
+        ret = None
+        if self.__frequency == pyalgotrade.barfeed.Frequency.MINUTE:
+            ret = datetime.datetime.strptime(date_time, "%Y%m%d %H%M%S")
+        elif self.__frequency == pyalgotrade.barfeed.Frequency.DAY:
+            ret = datetime.datetime.strptime(date_time, "%Y%m%d")
+            # Time on CSV files is empty. If told to set one, do it.
+            if self.__daily_bar_time != None:
+                ret = datetime.datetime.combine(ret, self.__daily_bar_time)
+        else:
+            assert(False)
 
-		# According to NinjaTrader documentation the exported data will be in UTC.
-		ret = pytz.utc.localize(ret)
+        # According to NinjaTrader documentation the exported data will be in UTC.
+        ret = pytz.utc.localize(ret)
 
-		# Localize bars if a market session was set.
-		if self.__timezone:
-			ret = dt.localize(ret, self.__timezone)
-		return ret
+        # Localize bars if a market session was set.
+        if self.__timezone:
+            ret = dt.localize(ret, self.__timezone)
+        return ret
 
-	def getFieldNames(self):
-		return ["Date Time", "Open", "High", "Low", "Close", "Volume"]
+    def get_field_names(self):
+        return ["Date Time", "Open", "High", "Low", "Close", "Volume"]
 
-	def getDelimiter(self):
-		return ";"
+    def get_delimiter(self):
+        return ";"
 
-	def parseBar(self, csvRowDict):
-		dateTime = self.__parseDateTime(csvRowDict["Date Time"])
-		close = float(csvRowDict["Close"])
-		open_ = float(csvRowDict["Open"])
-		high = float(csvRowDict["High"])
-		low = float(csvRowDict["Low"])
-		volume = float(csvRowDict["Volume"])
-		return bar.Bar(dateTime, open_, high, low, close, volume, None)
+    def parse_bar(self, csv_row_dict):
+        date_time = self.__parse_date_time(csv_row_dict["Date Time"])
+        close = float(csv_row_dict["Close"])
+        open_ = float(csv_row_dict["Open"])
+        high = float(csv_row_dict["High"])
+        low = float(csv_row_dict["Low"])
+        volume = float(csv_row_dict["Volume"])
+        return bar.Bar(date_time, open_, high, low, close, volume, None)
+
 
 class Feed(csvfeed.BarFeed):
-	"""A :class:`pyalgotrade.barfeed.csvfeed.BarFeed` that loads bars from CSV files exported from NinjaTrader.
+    """A :class:`pyalgotrade.barfeed.csvfeed.BarFeed` that loads bars from CSV files exported from NinjaTrader.
 
-	:param frequency: The frequency of the bars.
-	:param timezone: The default timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
-	:type timezone: A pytz timezone.
+    :param frequency: The frequency of the bars.
+    :param timezone: The default timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
+    :type timezone: A pytz timezone.
 
-	.. note::
+    .. note::
 
-		Valid **frequency** parameter values are:
+        Valid **frequency** parameter values are:
 
-		 * pyalgotrade.barfeed.Frequency.MINUTE 
-		 * pyalgotrade.barfeed.Frequency.DAY
-	"""
+        * pyalgotrade.barfeed.Frequency.MINUTE
+        * pyalgotrade.barfeed.Frequency.DAY
+    """
 
-	def __init__(self, frequency, timezone = None):
-		if type(timezone) == types.IntType:
-			raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
+    def __init__(self, frequency, timezone=None):
+        if type(timezone) == types.IntType:
+            raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
 
-		csvfeed.BarFeed.__init__(self, frequency)
-		self.__timezone = timezone
+        csvfeed.BarFeed.__init__(self, frequency)
+        self.__timezone = timezone
 
-	def addBarsFromCSV(self, instrument, path, timezone = None):
-		"""Loads bars for a given instrument from a CSV formatted file.
-		The instrument gets registered in the bar feed.
-		
-		:param instrument: Instrument identifier.
-		:type instrument: string.
-		:param path: The path to the file.
-		:type path: string.
-		:param timezone: The timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
-		:type timezone: A pytz timezone.
-		"""
+    def add_bars_from_csv(self, symbol, path, timezone=None):
+        """Loads bars for a given symbol from a CSV formatted file.
+        The symbol gets registered in the bar feed.
 
-		if type(timezone) == types.IntType:
-			raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
+        :param symbol: Instrument identifier.
+        :type symbol: string.
+        :param path: The path to the file.
+        :type path: string.
+        :param timezone: The timezone to use to localize bars. Check :mod:`pyalgotrade.marketsession`.
+        :type timezone: A pytz timezone.
+        """
 
-		if timezone is None:
-			timezone = self.__timezone
+        if type(timezone) == types.IntType:
+            raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
 
-		rowParser = RowParser(self.getFrequency(), self.getDailyBarTime(), timezone)
-		csvfeed.BarFeed.addBarsFromCSV(self, instrument, path, rowParser)
+        if timezone is None:
+            timezone = self.__timezone
 
+        row_parser = RowParser(self.get_frequency(), self.get_daily_bar_time(), timezone)
+        csvfeed.BarFeed.add_bars_from_csv(self, symbol, path, row_parser)

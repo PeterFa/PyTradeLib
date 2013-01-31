@@ -6,14 +6,14 @@ Download here: <a href="http://sourceforge.net/projects/pyalgotrade/files/0.10/P
   <li>Returns analysis (pyalgotrade.stratanalyzer.returns.Returns).</li>
   <li>Trades analysis (pyalgotrade.stratanalyzer.trades.Trades).</li>
   <li>Support for bar timezones (pyalgotrade.marketsession).</li>
-  <li>Support for sequence like operations in dataseries (__getitem__ and __len__. getValue and getValueAbsolute will soon get deprecated).</li>
+  <li>Support for sequence like operations in dataseries (__getitem__ and __len__. get_value and get_value_absolute will soon get deprecated).</li>
   <li>Support for mapping like operations in bar feeds (__getitem__ and __contains__).</li>
   <li>Support for mapping like operations in bar.Bars (__getitem__ and __contains__).</li>
   <li>Google App Engine: Added support for re-executing strategies.</li>
-  <li>broker.backtesting.Broker.getValue no longer needs the bars as a parameter. It will take those out of the feed.</li>
-  <li>Bug fix: broker.backtesting.getActiveOrders was not returning all orders during event dispatching.</li>
+  <li>broker.backtesting.Broker.get_value no longer needs the bars as a parameter. It will take those out of the feed.</li>
+  <li>Bug fix: broker.backtesting.get_active_orders was not returning all orders during event dispatching.</li>
   <li>Bug fix: Fixed returns calculations for short positions. Thanks John Fawcett for explaining this.</li>
-  <li>Bug fix: Fixed a bug in the Strategy class and the backtesting broker when dealing with multiple instruments. Was not handling absence of bars appropriately. Thanks Fabian Braennstroem for reporting this.</li>
+  <li>Bug fix: Fixed a bug in the Strategy class and the backtesting broker when dealing with multiple symbols. Was not handling absence of bars appropriately. Thanks Fabian Braennstroem for reporting this.</li>
   <li>Bug fix: Additional dataseries added to the portfolio subplot were not showing. Thanks Sedov Anton for reporting this.</li>
   <li>Bug fix: Additional subplots (those created using getOrCreateSubplot) are now ordered as created. Thanks Sedov Anton for reporting this and suggesting the fix.</li>
 </ul>
@@ -21,15 +21,15 @@ Download here: <a href="http://sourceforge.net/projects/pyalgotrade/files/0.10/P
 <h2>Version: 0.9 (1/Sep/2012)</h2>
 Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.9.tar.gz">PyAlgoTrade-0.9.tar.gz</a>
 <ul>
-  <li>Added a method to the strategy class to get notified when an order gets updated (onOrderUpdated). This is only called if the order was placed using the broker interface directly.</li>
+  <li>Added a method to the strategy class to get notified when an order gets updated (on_order_updated). This is only called if the order was placed using the broker interface directly.</li>
   <li>Bug fix: A KeyError exception was raised in the strategy class when placing orders using the broker interface directly. Thanks 'Femto Trader' for reporting this.</li>
 </ul>
 
 <h2>Version 0.8 (28/Aug/2012)</h2>
 Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.8.tar.gz">PyAlgoTrade-0.8.tar.gz</a>
 <ul>
-  <li>StrategyPlotter now plots each instrument in a separate subplot. getMainSubplot was replaced by getIntrumentSubplot.</li>
-  <li>Strategy.exitPosition allows setting the exit order as GTC or not, or matching the entry order (default).</li>
+  <li>StrategyPlotter now plots each symbol in a separate subplot. getMainSubplot was replaced by getIntrumentSubplot.</li>
+  <li>Strategy.exit_position allows setting the exit order as GTC or not, or matching the entry order (default).</li>
   <li>Bug fix: Was hitting an AssertionError in the strategy class when overwritting exit orders with new ones.</li>
   <li>Bug fix: Set exit-on-session-close orders as GTC.</li>
 </ul>

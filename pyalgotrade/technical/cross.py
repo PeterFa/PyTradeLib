@@ -48,17 +48,17 @@ class Base(technical.TechnicalIndicatorBase):
 		self.__period = period
 		self.__signCheck = signCheck
 
-	def getFirstValidPos(self):
-		return max(self.__ds1.getFirstValidPos(), self.__ds2.getFirstValidPos())
+	def get_first_valid_index(self):
+		return max(self.__ds1.get_first_valid_index(), self.__ds2.get_first_valid_index())
 
-	def getLength(self):
-		return min(self.__ds1.getLength(), self.__ds2.getLength())
+	def get_length(self):
+		return min(self.__ds1.get_length(), self.__ds2.get_length())
 
-	def calculateValue(self, firstPos, lastPos):
+	def calculateValue(self, first_idx, last_idx):
 		# Get both set of values.
-		firstPos = max(lastPos - (self.__period - 1), 0)
-		valuesDS1 = self.__ds1.getValuesAbsolute(firstPos, lastPos, True)
-		valuesDS2 = self.__ds2.getValuesAbsolute(firstPos, lastPos, True)
+		first_idx = max(last_idx - (self.__period - 1), 0)
+		valuesDS1 = self.__ds1.get_values_absolute(first_idx, last_idx, True)
+		valuesDS2 = self.__ds2.get_values_absolute(first_idx, last_idx, True)
 
 		# Compute differences and check sign changes.
 		ret = 0

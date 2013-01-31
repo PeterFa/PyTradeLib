@@ -27,72 +27,71 @@ from pyalgotrade import optimizer
 from pyalgotrade.optimizer import server
 from pyalgotrade.optimizer import worker
 
-def server_thread(srv, barFeed, strategyParameters, port):
-	srv.serve(barFeed, strategyParameters)
+def server_thread(srv, bar_feed, strategy_parameters, port):
+    srv.serve(bar_feed, strategy_parameters)
 
-def worker_process(strategyClass, port):
-	class Worker(worker.Worker):
-		def runStrategy(self, barFeed, *parameters):
-			strat = strategyClass(barFeed, *parameters)
-			strat.run()
-			return strat.getResult()
+def worker_process(strategy_class, port):
+    class Worker(worker.Worker):
+        def run_strategy(self, bar_feed, *parameters):
+            strat = strategy_class(bar_feed, *parameters)
+            strat.run()
+            return strat.get_result()
 
-	# Create a worker and run it.
-	w = Worker("localhost", port)
-	w.setLogger(optimizer.get_logger("worker", logging.ERROR))
-	w.run()
+    # Create a worker and run it.
+    w = Worker("localhost", port)
+    w.set_logger(optimizer.get_logger("worker", logging.ERROR))
+    w.run()
 
 def find_port():
-	while True:
-		ret = random.randint(1025, 65536)
-		try:
-			s = socket.socket()
-			s.bind(("localhost", ret))
-			s.close()
-			return ret
-		except socket.error:
-			pass
+    while True:
+        ret = random.randint(1025, 65536)
+        try:
+            s = socket.socket()
+            s.bind(("localhost", ret))
+            s.close()
+            return ret
+        except socket.error:
+            pass
 
-def run(strategyClass, barFeed, strategyParameters, workerCount = None):
-	"""Executes many instances of a strategy in parallel and finds the parameters that yield the best results.
+def run(strategy_class, bar_feed, strategy_parameters, worker_count=None):
+    """Executes many instances of a strategy in parallel and finds the parameters that yield the best results.
 
-	:param strategyClass: The strategy class.
-	:param barFeed: The bar feed to use to backtest the strategy.
-	:type barFeed: :class:`pyalgotrade.barfeed.BarFeed`.
-	:param strategyParameters: The set of parameters to use for backtesting. An iterable object where **each element is a tuple that holds parameter values**.
-	:param workerCount: The number of strategies to run in parallel. If None then as many workers as CPUs are used.
-	:type workerCount: int.
-	"""
+    :param strategy_class: The strategy class.
+    :param bar_feed: The bar feed to use to backtest the strategy.
+    :type bar_feed: :class:`pyalgotrade.barfeed.BarFeed`.
+    :param strategy_parameters: The set of parameters to use for backtesting. An iterable object where **each element is a tuple that holds parameter values**.
+    :param worker_count: The number of strategies to run in parallel. If None then as many workers as CPUs are used.
+    :type worker_count: int.
+    """
 
-	assert(workerCount == None or workerCount > 0)
-	if workerCount == None:
-		workerCount = multiprocessing.cpu_count()
+    assert(worker_count == None or worker_count > 0)
+    if worker_count == None:
+        worker_count = multiprocessing.cpu_count()
 
-	workers = []
-	port = find_port()
-	if port == None:
-		raise Exception("Failed to find a port to listen")
+    workers = []
+    port = find_port()
+    if port == None:
+        raise Exception("Failed to find a port to listen")
 
-	# Build and start the server thread before the worker processes. We'll manually stop the server once workers have finished.
-	srv = server.Server("localhost", port, False)
-	serverThread = threading.Thread(target=server_thread, args=(srv, barFeed, strategyParameters, port))
-	serverThread.start()
-	
-	try:
-		# Build the worker processes.
-		for i in range(workerCount):
-			workers.append(multiprocessing.Process(target=worker_process, args=(strategyClass, port)))
+    # Build and start the server thread before the worker processes. We'll manually stop the server once workers have finished.
+    srv = server.Server("localhost", port, False)
+    server_thread = threading.Thread(target=server_thread, args=(srv, bar_feed, strategy_parameters, port))
+    server_thread.start()
 
-		# Start workers
-		for process in workers:
-			process.start()
+    try:
+        # Build the worker processes.
+        for i in range(worker_count):
+            workers.append(multiprocessing.Process(target=worker_process, args=(strategy_class, port)))
 
-		# Wait workers
-		for process in workers:
-			process.join()
+        # Start workers
+        for process in workers:
+            process.start()
 
-	finally:
-		# Stop and wait the server to finish.
-		srv.stop()
-		serverThread.join()
+        # Wait workers
+        for process in workers:
+            process.join()
 
+    finally:
+        # Stop and wait the server to finish.
+        srv.stop()
+        server_thread.join()

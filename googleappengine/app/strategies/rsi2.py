@@ -18,67 +18,67 @@ from pyalgotrade import strategy
 from pyalgotrade.technical import ma
 from pyalgotrade.technical import rsi
 
+
 class Strategy(strategy.Strategy):
-	def __init__(self, feed, entrySMA, exitSMA, rsiPeriod, overBoughtThreshold, overSoldThreshold):
-		initialCash = 2000
-		strategy.Strategy.__init__(self, feed, initialCash)
-		self.__instrument = feed.getDefaultInstrument()
-		ds = feed.getDataSeries().getCloseDataSeries()
-		self.__entrySMA = ma.SMA(ds, entrySMA)
-		self.__exitSMA = ma.SMA(ds, exitSMA)
-		self.__rsi = rsi.RSI(ds, rsiPeriod)
-		self.__overBoughtThreshold = overBoughtThreshold
-		self.__overSoldThreshold = overSoldThreshold
-		self.__longPos = None
-		self.__shortPos = None
+    def __init__(self, feed, entrySMA, exitSMA, rsiPeriod, overBoughtThreshold, overSoldThreshold):
+        initialCash = 2000
+        strategy.Strategy.__init__(self, feed, initialCash)
+        self.__symbol = feed.get_default_symbol()
+        ds = feed.get_data_series().get_close_data_series()
+        self.__entrySMA = ma.SMA(ds, entrySMA)
+        self.__exitSMA = ma.SMA(ds, exitSMA)
+        self.__rsi = rsi.RSI(ds, rsiPeriod)
+        self.__overBoughtThreshold = overBoughtThreshold
+        self.__overSoldThreshold = overSoldThreshold
+        self.__longPos = None
+        self.__shortPos = None
 
-	def onEnterCanceled(self, position):
-		if self.__longPos == position:
-			self.__longPos = None
-		elif self.__shortPos == position:
-			self.__shortPos = None
-		else:
-			assert(False)
+    def on_enter_canceled(self, position):
+        if self.__longPos == position:
+            self.__longPos = None
+        elif self.__shortPos == position:
+            self.__shortPos = None
+        else:
+            assert(False)
 
-	def onExitOk(self, position):
-		if self.__longPos == position:
-			self.__longPos = None
-		elif self.__shortPos == position:
-			self.__shortPos = None
-		else:
-			assert(False)
+    def on_exit_ok(self, position):
+        if self.__longPos == position:
+            self.__longPos = None
+        elif self.__shortPos == position:
+            self.__shortPos = None
+        else:
+            assert(False)
 
-	def onExitCanceled(self, position):
-		# If the exit was canceled, re-submit it.
-		self.exitPosition(position)
+    def on_exit_canceled(self, position):
+        # If the exit was canceled, re-submit it.
+        self.exit_position(position)
 
-	def onBars(self, bars):
-		# Wait for enough bars to be available to calculate SMA and RSI.
-		if self.__exitSMA[-1] is None or self.__entrySMA[-1] is None or self.__rsi[-1] is None:
-			return
+    def on_bars(self, bars):
+        # Wait for enough bars to be available to calculate SMA and RSI.
+        if self.__exitSMA[-1] is None or self.__entrySMA[-1] is None or self.__rsi[-1] is None:
+            return
 
-		bar = bars.getBar(self.__instrument)
-		if self.__longPos != None:
-			if self.exitLongSignal(bar):
-				self.exitPosition(self.__longPos)
-		elif self.__shortPos != None:
-			if self.exitShortSignal(bar):
-				self.exitPosition(self.__shortPos)
-		else:
-			if self.enterLongSignal(bar):
-				self.__longPos = self.enterLong(self.__instrument, 10, True)
-			elif self.enterShortSignal(bar):
-				self.__shortPos = self.enterShort(self.__instrument, 10, True)
+        bar = bars.get_bar(self.__symbol)
+        if self.__longPos != None:
+            if self.exitLongSignal(bar):
+                self.exit_position(self.__longPos)
+        elif self.__shortPos != None:
+            if self.exitShortSignal(bar):
+                self.exit_position(self.__shortPos)
+        else:
+            if self.enter_longSignal(bar):
+                self.__longPos = self.enter_long(self.__symbol, 10, True)
+            elif self.enter_shortSignal(bar):
+                self.__shortPos = self.enter_short(self.__symbol, 10, True)
 
-	def enterLongSignal(self, bar):
-		return bar.getClose() > self.__entrySMA[-1] and self.__rsi[-1] <= self.__overSoldThreshold
+    def enter_longSignal(self, bar):
+        return bar.get_close() > self.__entrySMA[-1] and self.__rsi[-1] <= self.__overSoldThreshold
 
-	def exitLongSignal(self, bar):
-		return bar.getClose() > self.__exitSMA[-1]
+    def exitLongSignal(self, bar):
+        return bar.get_close() > self.__exitSMA[-1]
 
-	def enterShortSignal(self, bar):
-		return bar.getClose() < self.__entrySMA[-1] and self.__rsi[-1] >= self.__overBoughtThreshold
+    def enter_shortSignal(self, bar):
+        return bar.get_close() < self.__entrySMA[-1] and self.__rsi[-1] >= self.__overBoughtThreshold
 
-	def exitShortSignal(self, bar):
-		return bar.getClose() < self.__exitSMA[-1]
-
+    def exitShortSignal(self, bar):
+        return bar.get_close() < self.__exitSMA[-1]

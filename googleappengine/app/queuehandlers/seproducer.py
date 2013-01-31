@@ -25,56 +25,58 @@ from queuehandlers import seconsumer
 from common import parameters
 import common.logger
 
+
 # Build a parameters.ParametersIterator from a StratExecConfig.
 def build_params_iterator(stratExecConfig):
-	ret = parameters.ParametersIterator(len(stratExecConfig.parameterRanges) / 2)
-	for i in range(0, len(stratExecConfig.parameterRanges), 2):
-		paramPos = int(i/2)
-		firstValue = stratExecConfig.parameterRanges[i]
-		lastValue = stratExecConfig.parameterRanges[i+1]
-		ret.setRange(paramPos, firstValue, lastValue)
-	return ret
+    ret = parameters.ParametersIterator(len(stratExecConfig.parameterRanges) / 2)
+    for i in range(0, len(stratExecConfig.parameterRanges), 2):
+        paramPos = int(i/2)
+        firstValue = stratExecConfig.parameterRanges[i]
+        lastValue = stratExecConfig.parameterRanges[i+1]
+        ret.setRange(paramPos, firstValue, lastValue)
+    return ret
+
 
 class SEProducerHandler(webapp.RequestHandler):
-	url = "/queue/seproducer"
-	class Params:
-		stratExecConfigKeyParam = 'stratExecConfigKey'
-		paramsItParam = 'paramsIt'
+    url = "/queue/seproducer"
+    class Params:
+        stratExecConfigKeyParam = 'stratExecConfigKey'
+        paramsItParam = 'paramsIt'
 
-	@staticmethod
-	def queue(stratExecConfigKey, paramsIt=None):
-		if paramsIt == None:
-			stratExecConfig = persistence.StratExecConfig.getByKey(stratExecConfigKey)
-			paramsIt = build_params_iterator(stratExecConfig)
+    @staticmethod
+    def queue(stratExecConfigKey, paramsIt=None):
+        if paramsIt == None:
+            stratExecConfig = persistence.StratExecConfig.getByKey(stratExecConfigKey)
+            paramsIt = build_params_iterator(stratExecConfig)
 
-		params = {}
-		params[SEProducerHandler.Params.stratExecConfigKeyParam] = stratExecConfigKey
-		params[SEProducerHandler.Params.paramsItParam] = pickle.dumps(paramsIt)
-		taskqueue.add(queue_name="se-producer-queue", url=SEProducerHandler.url, params=params)
+        params = {}
+        params[SEProducerHandler.Params.stratExecConfigKeyParam] = stratExecConfigKey
+        params[SEProducerHandler.Params.paramsItParam] = pickle.dumps(paramsIt)
+        taskqueue.add(queue_name="se-producer-queue", url=SEProducerHandler.url, params=params)
 
-	def post(self):
-		stratExecConfigKey = self.request.get(SEProducerHandler.Params.stratExecConfigKeyParam)
-		paramsIt = pickle.loads(str(self.request.get(SEProducerHandler.Params.paramsItParam)))
+    def post(self):
+        stratExecConfigKey = self.request.get(SEProducerHandler.Params.stratExecConfigKeyParam)
+        paramsIt = pickle.loads(str(self.request.get(SEProducerHandler.Params.paramsItParam)))
 
-		# Check if we need to abort executions.
-		stratExecConfig = persistence.StratExecConfig.getByKey(stratExecConfigKey)
-		if stratExecConfig.status == persistence.StratExecConfig.Status.CANCELED_TOO_MANY_ERRORS:
-			common.logger.Logger().error("Skipping producer task due to too many errors")
-			return
+        # Check if we need to abort executions.
+        stratExecConfig = persistence.StratExecConfig.getByKey(stratExecConfigKey)
+        if stratExecConfig.status == persistence.StratExecConfig.Status.CANCELED_TOO_MANY_ERRORS:
+            common.logger.Logger().error("Skipping producer task due to too many errors")
+            return
 
-		# Queue a strategy execution task.
-		seconsumer.SEConsumerHandler.queue(stratExecConfigKey, paramsIt, seconsumer.SEConsumerHandler.defaultBatchSize)
+        # Queue a strategy execution task.
+        seconsumer.SEConsumerHandler.queue(stratExecConfigKey, paramsIt, seconsumer.SEConsumerHandler.default_batch_size)
 
-		# Queue the next producer task.
-		for i in xrange(seconsumer.SEConsumerHandler.defaultBatchSize):
-			paramsIt.moveNext()
-		if paramsIt.getCurrent() != None:
-			SEProducerHandler.queue(stratExecConfigKey, paramsIt)
+        # Queue the next producer task.
+        for i in xrange(seconsumer.SEConsumerHandler.default_batch_size):
+            paramsIt.moveNext()
+        if paramsIt.getCurrent() != None:
+            SEProducerHandler.queue(stratExecConfigKey, paramsIt)
+
 
 def main():
-	application = webapp.WSGIApplication([(SEProducerHandler.url, SEProducerHandler)], debug=True)
-	run_wsgi_app(application)
+    application = webapp.WSGIApplication([(SEProducerHandler.url, SEProducerHandler)], debug=True)
+    run_wsgi_app(application)
 
 if __name__ == "__main__":
-	main()
-
+    main()

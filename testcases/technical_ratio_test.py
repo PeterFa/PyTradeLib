@@ -23,37 +23,37 @@ from pyalgotrade.technical import ratio
 from pyalgotrade import dataseries
 
 class TestCase(unittest.TestCase):
-	def __buildRatio(self, values):
-		return ratio.Ratio(dataseries.SequenceDataSeries(values))
+    def __buildRatio(self, values):
+        return ratio.Ratio(dataseries.SequenceDataSeries(values))
 
-	def testSimple(self):
-		ratio = self.__buildRatio([1, 2, 1])
-		self.assertTrue(ratio[0] == None)
-		self.assertTrue(ratio[1] == 1)
-		self.assertTrue(ratio[2] == -0.5)
-		self.assertTrue(ratio[-1] == -0.5)
-		with self.assertRaises(IndexError):
-			ratio[3]
+    def testSimple(self):
+        ratio = self.__buildRatio([1, 2, 1])
+        self.assertTrue(ratio[0] == None)
+        self.assertTrue(ratio[1] == 1)
+        self.assertTrue(ratio[2] == -0.5)
+        self.assertTrue(ratio[-1] == -0.5)
+        with self.assertRaises(IndexError):
+            ratio[3]
 
-		self.assertTrue(ratio[-2] == ratio[1])
-		self.assertTrue(ratio[-1] == ratio[2])
+        self.assertTrue(ratio[-2] == ratio[1])
+        self.assertTrue(ratio[-1] == ratio[2])
 
-	def testNegativeValues(self):
-		ratio = self.__buildRatio([-1, -2, -1])
-		self.assertTrue(ratio[0] == None)
-		self.assertTrue(ratio[1] == -1)
-		self.assertTrue(ratio[2] == 0.5)
-		self.assertTrue(ratio[-1] == 0.5)
-		with self.assertRaises(IndexError):
-			ratio[3]
+    def testNegativeValues(self):
+        ratio = self.__buildRatio([-1, -2, -1])
+        self.assertTrue(ratio[0] == None)
+        self.assertTrue(ratio[1] == -1)
+        self.assertTrue(ratio[2] == 0.5)
+        self.assertTrue(ratio[-1] == 0.5)
+        with self.assertRaises(IndexError):
+            ratio[3]
 
-		self.assertTrue(ratio[-2] == ratio[1])
-		self.assertTrue(ratio[-1] == ratio[2])
+        self.assertTrue(ratio[-2] == ratio[1])
+        self.assertTrue(ratio[-1] == ratio[2])
 
 def getTestCases():
-	ret = []
-	ret.append(TestCase("testSimple"))
-	ret.append(TestCase("testNegativeValues"))
-	return ret
+    ret = []
+    ret.append(TestCase("testSimple"))
+    ret.append(TestCase("testNegativeValues"))
+    return ret
 
 

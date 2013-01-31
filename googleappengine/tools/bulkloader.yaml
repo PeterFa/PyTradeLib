@@ -31,8 +31,8 @@ transformers:
       external_name: key
       export_transform: transform.key_id_or_name_as_string
 
-    - property: instrument
-      external_name: instrument
+    - property: symbol
+      external_name: symbol
       # Type: String Stats: 1 properties of this type in this kind.
 
     - property: barType
@@ -40,8 +40,8 @@ transformers:
       # Type: Integer Stats: 1 properties of this type in this kind.
       import_transform: transform.none_if_empty(int)
 
-    - property: dateTime
-      external_name: dateTime
+    - property: date_time
+      external_name: date_time
       # Type: Date/Time Stats: 1 properties of this type in this kind.
       import_transform: transform.import_date_time('%Y-%m-%dT%H:%M:%S')
       export_transform: transform.export_date_time('%Y-%m-%dT%H:%M:%S')
@@ -71,8 +71,8 @@ transformers:
       # Type: Float Stats: 1 properties of this type in this kind.
       import_transform: transform.none_if_empty(float)
 
-    - property: adjClose
-      external_name: adjClose
+    - property: adj_close
+      external_name: adj_close
       # Type: Float Stats: 1 properties of this type in this kind.
       import_transform: transform.none_if_empty(float)
 

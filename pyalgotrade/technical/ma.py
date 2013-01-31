@@ -20,15 +20,15 @@
 
 from pyalgotrade import technical
 
-def calculate_sma(filterDS, firstPos, lastPos):
+def calculate_sma(filterDS, first_idx, last_idx):
 	accum = 0
-	for i in xrange(firstPos, lastPos+1):
-		value = filterDS.getValueAbsolute(i)
+	for i in xrange(first_idx, last_idx+1):
+		value = filterDS.get_value_absolute(i)
 		if value is None:
 			return None
 		accum += value
 
-	ret = accum / float(lastPos - firstPos + 1)
+	ret = accum / float(last_idx - first_idx + 1)
 	return ret
 
 # This is the formula I'm using to calculate the averages based on previous ones.
@@ -62,31 +62,31 @@ class SMA(technical.DataSeriesFilter):
 		self.__prevAvg = None
 		self.__prevAvgPos = None
 
-	def __calculateFastSMA(self, firstPos, lastPos):
-		assert(firstPos > 0)
-		firstValue = self.getDataSeries().getValueAbsolute(firstPos-1)
-		lastValue = self.getDataSeries().getValueAbsolute(lastPos)
+	def __calculateFastSMA(self, first_idx, last_idx):
+		assert(first_idx > 0)
+		firstValue = self.get_data_series().get_value_absolute(first_idx-1)
+		lastValue = self.get_data_series().get_value_absolute(last_idx)
 		if lastValue is None:
 			return None
 
 		self.__prevAvg = self.__prevAvg + lastValue / float(self.getPeriod()) - firstValue / float(self.getPeriod())
-		self.__prevAvgPos = lastPos
+		self.__prevAvgPos = last_idx
 		return self.__prevAvg
 
-	def __calculateSMA(self, firstPos, lastPos):
-		ret = calculate_sma(self.getDataSeries(), firstPos, lastPos)
+	def __calculateSMA(self, first_idx, last_idx):
+		ret = calculate_sma(self.get_data_series(), first_idx, last_idx)
 		self.__prevAvg = ret
-		self.__prevAvgPos = lastPos
+		self.__prevAvgPos = last_idx
 		return ret
 
 	def getPeriod(self):
 		return self.getWindowSize()
 
-	def calculateValue(self, firstPos, lastPos):
-		if self.__prevAvgPos != None and self.__prevAvgPos == lastPos - 1:
-			ret = self.__calculateFastSMA(firstPos, lastPos)
+	def calculateValue(self, first_idx, last_idx):
+		if self.__prevAvgPos != None and self.__prevAvgPos == last_idx - 1:
+			ret = self.__calculateFastSMA(first_idx, last_idx)
 		else:
-			ret = self.__calculateSMA(firstPos, lastPos)
+			ret = self.__calculateSMA(first_idx, last_idx)
 		return ret
 
 class EMA(technical.DataSeriesFilter):
@@ -104,14 +104,14 @@ class EMA(technical.DataSeriesFilter):
 	def getPeriod(self):
 		return self.getWindowSize()
 
-	def calculateValue(self, firstPos, lastPos):
+	def calculateValue(self, first_idx, last_idx):
 		# Formula from http://stockcharts.com/school/doku.php?id=chart_school:technical_indicators:moving_averages
-		if lastPos == self.getFirstValidPos():
+		if last_idx == self.get_first_valid_index():
 			# First average is a SMA.
-			ret = calculate_sma(self.getDataSeries(), firstPos, lastPos)
+			ret = calculate_sma(self.get_data_series(), first_idx, last_idx)
 		else:
-			currValue = self.getDataSeries().getValueAbsolute(lastPos)
-			prevEMA = self.getValueAbsolute(lastPos - 1)
+			currValue = self.get_data_series().get_value_absolute(last_idx)
+			prevEMA = self.get_value_absolute(last_idx - 1)
 			multiplier = (2.0 / (self.getPeriod() + 1))
 			ret = (currValue - prevEMA) * multiplier + prevEMA
 		return ret
@@ -135,15 +135,15 @@ class WMA(technical.DataSeriesFilter):
 	def getWeights(self):
 		return self.__weights
 
-	def calculateValue(self, firstPos, lastPos):
+	def calculateValue(self, first_idx, last_idx):
 		accum = 0
 		weightSum = 0
-		for i in xrange(firstPos, lastPos+1):
-			value = self.getDataSeries().getValueAbsolute(i)
+		for i in xrange(first_idx, last_idx+1):
+			value = self.get_data_series().get_value_absolute(i)
 			if value is None:
 				return None
 
-			weight = self.__weights[i - firstPos]
+			weight = self.__weights[i - first_idx]
 			accum += value * weight
 			weightSum += weight
 		return accum / float(weightSum)

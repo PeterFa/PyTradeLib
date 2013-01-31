@@ -23,30 +23,30 @@ import numpy
 
 # Returns the last values of a dataseries as a numpy.array, or None if not enough values could be retrieved from the dataseries.
 def value_ds_to_numpy(ds, count):
-	values = ds.getValues(count)
+	values = ds.get_values(count)
 	if values == None:
 		return None
 	return numpy.array([float(value) for value in values])
 
 # Returns the last open values of a bar dataseries as a numpy.array, or None if not enough values could be retrieved from the dataseries.
 def bar_ds_open_to_numpy(barDs, count):
-	return value_ds_to_numpy(barDs.getOpenDataSeries(), count)
+	return value_ds_to_numpy(barDs.get_open_data_series(), count)
 
 # Returns the last high values of a bar dataseries as a numpy.array, or None if not enough values could be retrieved from the dataseries.
 def bar_ds_high_to_numpy(barDs, count):
-	return value_ds_to_numpy(barDs.getHighDataSeries(), count)
+	return value_ds_to_numpy(barDs.get_high_data_series(), count)
 
 # Returns the last low values of a bar dataseries as a numpy.array, or None if not enough values could be retrieved from the dataseries.
 def bar_ds_low_to_numpy(barDs, count):
-	return value_ds_to_numpy(barDs.getLowDataSeries(), count)
+	return value_ds_to_numpy(barDs.get_low_data_series(), count)
 
 # Returns the last close values of a bar dataseries as a numpy.array, or None if not enough values could be retrieved from the dataseries.
 def bar_ds_close_to_numpy(barDs, count):
-	return value_ds_to_numpy(barDs.getCloseDataSeries(), count)
+	return value_ds_to_numpy(barDs.get_close_data_series(), count)
 
 # Returns the last volume values of a bar dataseries as a numpy.array, or None if not enough values could be retrieved from the dataseries.
 def bar_ds_volume_to_numpy(barDs, count):
-	return value_ds_to_numpy(barDs.getVolumeDataSeries(), count)
+	return value_ds_to_numpy(barDs.get_volume_data_series(), count)
 
 # Calls a talib function with the last values of a dataseries.
 def call_talib_with_ds(ds, count, talibFunc, *parameters):

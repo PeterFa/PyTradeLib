@@ -22,47 +22,46 @@ from pyalgotrade import execcontext
 import math
 
 def py_mean(values):
-	ret = None
-	if len(values):
-		accum = 0
-		for value in values:
-			if value is None:
-				return None
-			accum += value
-		ret = accum / float(len(values))
-	return ret
+    ret = None
+    if len(values):
+        accum = 0
+        for value in values:
+            if value is None:
+                return None
+            accum += value
+        ret = accum / float(len(values))
+    return ret
 
 def py_stddev(values, ddof = 1):
-	ret = None
-	if len(values):
-		mn = mean(values)
-		accum = 0
-		for value in values:
-			if value is None:
-				return None
-			accum += (value - mn)**2
+    ret = None
+    if len(values):
+        mn = mean(values)
+        accum = 0
+        for value in values:
+            if value is None:
+                return None
+            accum += (value - mn)**2
 
-		denom = len(values) - ddof
-		if denom <= 0:
-			return float('nan')
-		ret = math.sqrt(accum / float(denom))
-	return ret
+        denom = len(values) - ddof
+        if denom <= 0:
+            return float('nan')
+        ret = math.sqrt(accum / float(denom))
+    return ret
 
 if execcontext.running_in_google_app_engine:
-	mean = py_mean
-	stddev = py_stddev
+    mean = py_mean
+    stddev = py_stddev
 else:
-	import numpy
+    import numpy
 
-	def mean(values):
-		ret = None
-		if len(values):
-			ret =  numpy.array(values).mean()
-		return ret
+    def mean(values):
+        ret = None
+        if len(values):
+            ret =  numpy.array(values).mean()
+        return ret
 
-	def stddev(values, ddof = 1):
-		ret = None
-		if len(values):
-			ret =  numpy.array(values).std(ddof=ddof)
-		return ret
-
+    def stddev(values, ddof = 1):
+        ret = None
+        if len(values):
+            ret =  numpy.array(values).std(ddof=ddof)
+        return ret

@@ -5,9 +5,9 @@ class Accumulator(technical.DataSeriesFilter):
     def __init__(self, dataSeries, windowSize):
         technical.DataSeriesFilter.__init__(self, dataSeries, windowSize)
 
-    def calculateValue(self, firstPos, lastPos):
+    def calculateValue(self, first_idx, last_idx):
         accum = 0
-        for value in self.getDataSeries()[firstPos:lastPos+1]:
+        for value in self.get_data_series()[first_idx:last_idx+1]:
             # If any value from the wrapped DataSeries is None then we abort calculation and return None.
             if value is None:
                 return None

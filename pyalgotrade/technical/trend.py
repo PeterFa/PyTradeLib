@@ -39,8 +39,8 @@ class Slope(technical.DataSeriesFilter):
 	def getTrendDays(self):
 		return self.getWindowSize()
 
-	def calculateValue(self, firstPos, lastPos):
-		values = self.getDataSeries().getValuesAbsolute(firstPos, lastPos)
+	def calculateValue(self, first_idx, last_idx):
+		values = self.get_data_series().get_values_absolute(first_idx, last_idx)
 		if values is None:
 			return None
 
@@ -56,9 +56,9 @@ class Trend(Slope):
 		self.__positiveThreshold = positiveThreshold
 		self.__negativeThreshold = negativeThreshold
 
-	def calculateValue(self, firstPos, lastPos):
+	def calculateValue(self, first_idx, last_idx):
 		ret = None
-		slope = Slope.calculateValue(self, firstPos, lastPos)
+		slope = Slope.calculateValue(self, first_idx, last_idx)
 		if slope != None:
 			if slope > self.__positiveThreshold:
 				ret = True

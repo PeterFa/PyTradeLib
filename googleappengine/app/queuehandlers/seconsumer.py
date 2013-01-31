@@ -32,170 +32,173 @@ from common import cls
 from common import timer
 import common.logger
 
+
 # Converts a persistence.Bar to a pyalgotrade.bar.Bar.
 def ds_bar_to_pyalgotrade_bar(dsBar):
-	return bar.Bar(dsBar.dateTime, dsBar.open_, dsBar.high, dsBar.low, dsBar.close_, dsBar.volume, dsBar.adjClose)
+    return bar.Bar(dsBar.date_time, dsBar.open_, dsBar.high, dsBar.low, dsBar.close_, dsBar.volume, dsBar.adj_close)
 
 # Loads pyalgotrade.bar.Bars objects from the db.
-def load_pyalgotrade_daily_bars(instrument, barType, fromDateTime, toDateTime):
-	assert(barType == persistence.Bar.Type.DAILY)
-	# Load pyalgotrade.bar.Bar objects from the db.
-	dbBars = persistence.Bar.getBars(instrument, barType, fromDateTime, toDateTime)
-	bars = [ds_bar_to_pyalgotrade_bar(dbBar) for dbBar in dbBars]
+def load_pyalgotrade_daily_bars(symbol, barType, from_date_time, to_date_time):
+    assert(barType == persistence.Bar.Type.DAILY)
+    # Load pyalgotrade.bar.Bar objects from the db.
+    dbBars = persistence.Bar.get_bars(symbol, barType, from_date_time, to_date_time)
+    bars = [ds_bar_to_pyalgotrade_bar(dbBar) for dbBar in dbBars]
 
-	# Use a feed to build pyalgotrade.bar.Bars objects.
-	feed = membf.Feed(barfeed.Frequency.DAY)
-	feed.addBarsFromSequence(instrument, bars)
-	ret = []
-	feed.start()
-	for bars in feed:
-		ret.append(bars)
-	feed.stop()
-	feed.join()
-	return ret
+    # Use a feed to build pyalgotrade.bar.Bars objects.
+    feed = membf.Feed(barfeed.Frequency.DAY)
+    feed.add_bars_from_sequence(symbol, bars)
+    ret = []
+    feed.start()
+    for bars in feed:
+        ret.append(bars)
+    feed.stop()
+    feed.join()
+    return ret
+
 
 class BarsCache:
-	def __init__(self, logger):
-		self.__cache = {}
-		self.__logger = logger
+    def __init__(self, logger):
+        self.__cache = {}
+        self.__logger = logger
 
-	def __addLocal(self, key, bars):
-		self.__cache[key] = bars
+    def __addLocal(self, key, bars):
+        self.__cache[key] = bars
 
-	def __getLocal(self, key):
-		return self.__cache.get(key, None)
+    def __getLocal(self, key):
+        return self.__cache.get(key, None)
 
-	def __addToMemCache(self, key, bars):
-		try:
-			value = str(pickle.dumps(bars))
-			value = zlib.compress(value, 9)
-			memcache.add(key=key, value=value)
-		except Exception, e:
-			self.__logger.error("Failed to add bars to memcache: %s" % e)
+    def __addToMemCache(self, key, bars):
+        try:
+            value = str(pickle.dumps(bars))
+            value = zlib.compress(value, 9)
+            memcache.add(key=key, value=value)
+        except Exception, e:
+            self.__logger.error("Failed to add bars to memcache: %s" % e)
 
-	def __getFromMemCache(self, key):
-		ret = None
-		try:
-			value = memcache.get(key)
-			if value != None:
-				value = zlib.decompress(value)
-				ret = pickle.loads(value)
-		except Exception, e:
-			self.__logger.error("Failed to load bars from memcache: %s" % e)
-		return ret
+    def __getFromMemCache(self, key):
+        ret = None
+        try:
+            value = memcache.get(key)
+            if value != None:
+                value = zlib.decompress(value)
+                ret = pickle.loads(value)
+        except Exception, e:
+            self.__logger.error("Failed to load bars from memcache: %s" % e)
+        return ret
 
-	def add(self, key, bars):
-		key = str(key)
-		self.__addLocal(key, bars)
-		self.__addToMemCache(key, bars)
+    def add(self, key, bars):
+        key = str(key)
+        self.__addLocal(key, bars)
+        self.__addToMemCache(key, bars)
 
-	def get(self, key):
-		key = str(key)
-		ret = self.__getLocal(key)
-		if ret == None:
-			ret = self.__getFromMemCache(key)
-			if ret != None:
-				# Store in local cache for later use.
-				self.__addLocal(key, ret)
-		return ret
+    def get(self, key):
+        key = str(key)
+        ret = self.__getLocal(key)
+        if ret == None:
+            ret = self.__getFromMemCache(key)
+            if ret != None:
+                # Store in local cache for later use.
+                self.__addLocal(key, ret)
+        return ret
+
 
 class StrategyExecutor:
-	def __init__(self):
-		self.__logger = common.logger.Logger()
-		self.__barCache = BarsCache(self.__logger)
+    def __init__(self):
+        self.__logger = common.logger.Logger()
+        self.__barCache = BarsCache(self.__logger)
 
-	def __loadBars(self, stratExecConfig):
-		ret = self.__barCache.get(stratExecConfig.key())
-		if ret == None:
-			self.__logger.info("Loading '%s' bars from %s to %s" % (stratExecConfig.instrument, stratExecConfig.firstDate, stratExecConfig.lastDate))
-			ret = load_pyalgotrade_daily_bars(stratExecConfig.instrument, stratExecConfig.barType, stratExecConfig.firstDate, stratExecConfig.lastDate)
-			self.__barCache.add(stratExecConfig.key(), ret)
-		return ret
+    def __load_bars(self, stratExecConfig):
+        ret = self.__barCache.get(stratExecConfig.key())
+        if ret == None:
+            self.__logger.info("Loading '%s' bars from %s to %s" % (stratExecConfig.symbol, stratExecConfig.firstDate, stratExecConfig.lastDate))
+            ret = load_pyalgotrade_daily_bars(stratExecConfig.symbol, stratExecConfig.barType, stratExecConfig.firstDate, stratExecConfig.lastDate)
+            self.__barCache.add(stratExecConfig.key(), ret)
+        return ret
 
-	def getLogger(self):
-		return self.__logger
+    def get_logger(self):
+        return self.__logger
 
-	def runStrategy(self, stratExecConfig, paramValues):
-		bars = self.__loadBars(stratExecConfig)
+    def run_strategy(self, stratExecConfig, paramValues):
+        bars = self.__load_bars(stratExecConfig)
 
-		barFeed = barfeed.OptimizerBarFeed(barfeed.Frequency.DAY, [stratExecConfig.instrument], bars)
+        bar_feed = barfeed.OptimizerBarFeed(barfeed.Frequency.DAY, [stratExecConfig.symbol], bars)
 
-		# Evaluate the strategy with the feed bars.
-		params = [barFeed]
-		params.extend(paramValues)
-		myStrategy = cls.Class(stratExecConfig.className).getClass()(*params)
-		myStrategy.run()
-		return myStrategy.getResult()
+        # Evaluate the strategy with the feed bars.
+        params = [bar_feed]
+        params.extend(paramValues)
+        myStrategy = cls.Class(stratExecConfig.className).getClass()(*params)
+        myStrategy.run()
+        return myStrategy.get_result()
+
 
 class SEConsumerHandler(webapp.RequestHandler):
-	url = "/queue/seconsumer"
-	defaultBatchSize = 200
+    url = "/queue/seconsumer"
+    default_batch_size = 200
 
-	class Params:
-		stratExecConfigKeyParam = 'stratExecConfigKey'
-		paramsItParam = 'paramsIt'
-		batchSizeParam = 'batchSize'
+    class Params:
+        stratExecConfigKeyParam = 'stratExecConfigKey'
+        paramsItParam = 'paramsIt'
+        batchSizeParam = 'batchSize'
 
-	@staticmethod
-	def queue(stratExecConfigKey, paramsIt, batchSize):
-		params = {}
-		params[SEConsumerHandler.Params.stratExecConfigKeyParam] = stratExecConfigKey
-		params[SEConsumerHandler.Params.paramsItParam] = pickle.dumps(paramsIt)
-		params[SEConsumerHandler.Params.batchSizeParam] = batchSize
-		taskqueue.add(queue_name="se-consumer-queue", url=SEConsumerHandler.url, params=params)
+    @staticmethod
+    def queue(stratExecConfigKey, paramsIt, batchSize):
+        params = {}
+        params[SEConsumerHandler.Params.stratExecConfigKeyParam] = stratExecConfigKey
+        params[SEConsumerHandler.Params.paramsItParam] = pickle.dumps(paramsIt)
+        params[SEConsumerHandler.Params.batchSizeParam] = batchSize
+        taskqueue.add(queue_name="se-consumer-queue", url=SEConsumerHandler.url, params=params)
 
-	def post(self):
-		global strategyExecutor
+    def post(self):
+        global strategyExecutor
 
-		tmr = timer.Timer()
-		stratExecConfigKey = self.request.get(SEConsumerHandler.Params.stratExecConfigKeyParam)
-		paramsIt = pickle.loads(str(self.request.get(SEConsumerHandler.Params.paramsItParam)))
-		batchSize = int(self.request.get(SEConsumerHandler.Params.batchSizeParam))
-		stratExecConfig = persistence.StratExecConfig.getByKey(stratExecConfigKey)
+        tmr = timer.Timer()
+        stratExecConfigKey = self.request.get(SEConsumerHandler.Params.stratExecConfigKeyParam)
+        paramsIt = pickle.loads(str(self.request.get(SEConsumerHandler.Params.paramsItParam)))
+        batchSize = int(self.request.get(SEConsumerHandler.Params.batchSizeParam))
+        stratExecConfig = persistence.StratExecConfig.getByKey(stratExecConfigKey)
 
-		bestResult = 0
-		bestResultParams = []
-		executionsLeft = batchSize 
-		errors = 0 
-		while executionsLeft > 0:
-			try:
-				paramValues = paramsIt.getCurrent()
+        bestResult = 0
+        bestResultParams = []
+        executionsLeft = batchSize 
+        errors = 0 
+        while executionsLeft > 0:
+            try:
+                paramValues = paramsIt.getCurrent()
 
-				# If there are no more parameters, just stop.
-				if paramValues == None:
-					break
+                # If there are no more parameters, just stop.
+                if paramValues == None:
+                    break
 
-				result = strategyExecutor.runStrategy(stratExecConfig, paramValues)
-				if result > bestResult:
-					bestResult = result
-					bestResultParams = paramValues
-			except Exception, e:
-				errors += 1
-				strategyExecutor.getLogger().error("Error executing strategy '%s' with parameters %s: %s" % (stratExecConfig.className, paramValues, e))
-				strategyExecutor.getLogger().error(traceback.format_exc())
+                result = strategyExecutor.run_strategy(stratExecConfig, paramValues)
+                if result > bestResult:
+                    bestResult = result
+                    bestResultParams = paramValues
+            except Exception, e:
+                errors += 1
+                strategyExecutor.get_logger().error("Error executing strategy '%s' with parameters %s: %s" % (stratExecConfig.className, paramValues, e))
+                strategyExecutor.get_logger().error(traceback.format_exc())
 
-			executionsLeft -= 1
-			paramsIt.moveNext()
+            executionsLeft -= 1
+            paramsIt.moveNext()
 
-			# Stop executing before we ran out of time. I'm assuming that strategies take less than 1 minute to execute.
-			if tmr.minutesElapsed() > 9 and executionsLeft > 0:
-				strategyExecutor.getLogger().info("Rescheduling. %d executions left." % executionsLeft)
-				SEConsumerHandler.queue(stratExecConfigKey, paramsIt, executionsLeft)
-				break
+            # Stop executing before we ran out of time. I'm assuming that strategies take less than 1 minute to execute.
+            if tmr.minutesElapsed() > 9 and executionsLeft > 0:
+                strategyExecutor.get_logger().info("Rescheduling. %d executions left." % executionsLeft)
+                SEConsumerHandler.queue(stratExecConfigKey, paramsIt, executionsLeft)
+                break
 
-		# Queue the results.
-		seresult.SEResultHandler.queue(stratExecConfigKey, bestResult, bestResultParams, batchSize - executionsLeft, errors)
+        # Queue the results.
+        seresult.SEResultHandler.queue(stratExecConfigKey, bestResult, bestResultParams, batchSize - executionsLeft, errors)
 
 # This is global to reuse previously loaded bars.
 strategyExecutor = StrategyExecutor()
 
 def main():
-	_handlers = [
-			(SEConsumerHandler.url, SEConsumerHandler)
-			]
-	application = webapp.WSGIApplication(_handlers, debug=True)
-	run_wsgi_app(application)
+    _handlers = [
+            (SEConsumerHandler.url, SEConsumerHandler)
+            ]
+    application = webapp.WSGIApplication(_handlers, debug=True)
+    run_wsgi_app(application)
 
 if __name__ == "__main__":
-	main()
-
+    main()

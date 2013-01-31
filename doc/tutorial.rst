@@ -58,7 +58,7 @@ Let's start with a simple strategy, that is, one that just prints closing prices
 .. literalinclude:: ../samples/tutorial-1.py
 
 The code is doing 3 main things:
- 1. Declaring a new strategy. There is only one method that has to be defined, *onBars*, which is called for every bar in the feed.
+ 1. Declaring a new strategy. There is only one method that has to be defined, *on_bars*, which is called for every bar in the feed.
  2. Loading the feed from a CSV file.
  3. Running the strategy with the bars supplied by the feed.
 

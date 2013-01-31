@@ -23,28 +23,28 @@ from pyalgotrade.technical import trend
 from pyalgotrade import dataseries
 
 class TestCase(unittest.TestCase):
-	def __buildTrend(self, values, trendDays, positiveThreshold, negativeThreshold):
-		return trend.Trend(dataseries.SequenceDataSeries(values), trendDays, positiveThreshold, negativeThreshold)
+    def __buildTrend(self, values, trendDays, positiveThreshold, negativeThreshold):
+        return trend.Trend(dataseries.SequenceDataSeries(values), trendDays, positiveThreshold, negativeThreshold)
 
-	def testTrend(self):
-		trend = self.__buildTrend([1, 2, 3, 2, 1], 3, 0, 0)
-		self.assertTrue(trend[0] == None)
-		self.assertTrue(trend[1] == None)
-		self.assertTrue(trend[2] == True)
-		self.assertTrue(trend[3] == None)
-		self.assertTrue(trend[4] == False)
+    def testTrend(self):
+        trend = self.__buildTrend([1, 2, 3, 2, 1], 3, 0, 0)
+        self.assertTrue(trend[0] == None)
+        self.assertTrue(trend[1] == None)
+        self.assertTrue(trend[2] == True)
+        self.assertTrue(trend[3] == None)
+        self.assertTrue(trend[4] == False)
 
-	def testTrendWithCustomThresholds(self):
-		trend = self.__buildTrend([1, 2, 3, 5, -10], 3, 1, -1)
-		self.assertTrue(trend[0] == None)
-		self.assertTrue(trend[1] == None)
-		self.assertTrue(trend[2] == None)
-		self.assertTrue(trend[3] == True)
-		self.assertTrue(trend[4] == False)
+    def testTrendWithCustomThresholds(self):
+        trend = self.__buildTrend([1, 2, 3, 5, -10], 3, 1, -1)
+        self.assertTrue(trend[0] == None)
+        self.assertTrue(trend[1] == None)
+        self.assertTrue(trend[2] == None)
+        self.assertTrue(trend[3] == True)
+        self.assertTrue(trend[4] == False)
 
 def getTestCases():
-	ret = []
-	ret.append(TestCase("testTrend"))
-	ret.append(TestCase("testTrendWithCustomThresholds"))
-	return ret
+    ret = []
+    ret.append(TestCase("testTrend"))
+    ret.append(TestCase("testTrendWithCustomThresholds"))
+    return ret
 

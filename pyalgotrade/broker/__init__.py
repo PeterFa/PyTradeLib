@@ -25,414 +25,409 @@ from pyalgotrade import observer
 ## http://stocks.about.com/od/tradingbasics/a/markords.htm
 ## http://www.interactivebrokers.com/en/software/tws/usersguidebook/ordertypes/basic_order_types.htm
 
+
 class Order:
-	"""Base class for orders. 
+    """Base class for orders.
 
-	:param type_: The order type
-	:type type_: :class:`Order.Type`
-	:param action: The order action.
-	:type action: :class:`Order.Action`
-	:param instrument: Instrument identifier.
-	:type instrument: string.
-	:param quantity: Order quantity.
-	:type quantity: int.
+    :param type_: The order type
+    :type type_: :class:`Order.Type`
+    :param action: The order action.
+    :type action: :class:`Order.Action`
+    :param symbol: Instrument identifier.
+    :type symbol: string.
+    :param quantity: Order quantity.
+    :type quantity: int.
 
-	.. note::
+    .. note::
+        Valid **action** parameter values are:
 
-		Valid **action** parameter values are:
+        * Order.Action.BUY
+        * Order.Action.BUY_TO_COVER
+        * Order.Action.SELL
+        * Order.Action.SELL_SHORT
 
-		 * Order.Action.BUY
-		 * Order.Action.BUY_TO_COVER
-		 * Order.Action.SELL
-		 * Order.Action.SELL_SHORT
+        This is a base class and should not be used directly.
+    """
 
-		This is a base class and should not be used directly.
-	"""
+    class Action:
+        BUY	= 1
+        BUY_TO_COVER = 2
+        SELL = 3
+        SELL_SHORT = 4
 
-	class Action:
-		BUY				= 1
-		BUY_TO_COVER	= 2
-		SELL			= 3
-		SELL_SHORT		= 4
+    class State:
+        ACCEPTED = 1
+        CANCELED = 2
+        FILLED = 3
 
-	class State:
-		ACCEPTED		= 1
-		CANCELED		= 2
-		FILLED			= 3
+    class Type:
+        MARKET = 1
+        LIMIT = 2
+        STOP = 3
+        STOP_LIMIT = 4
 
-	class Type:
-		MARKET				= 1
-		LIMIT				= 2
-		STOP				= 3
-		STOP_LIMIT			= 4
+    def __init__(self, type_, action, symbol, quantity):
+        self.__type = type_
+        self.__action = action
+        self.__symbol = symbol
+        self.__quantity = quantity
+        self.__execution_info = None
+        self.__good_until_canceled = False
+        self.__all_or_none = True
+        self.__state = Order.State.ACCEPTED
+        self.__dirty = False
 
-	def __init__(self, type_, action, instrument, quantity):
-		self.__type = type_
-		self.__action = action
-		self.__instrument = instrument
-		self.__quantity = quantity
-		self.__executionInfo = None
-		self.__goodTillCanceled = False
-		self.__allOrNone = True
-		self.__state = Order.State.ACCEPTED
-		self.__dirty = False
+    def is_dirty(self):
+        return self.__dirty
 
-	def isDirty(self):
-		return self.__dirty
+    def set_dirty(self, dirty):
+        self.__dirty = dirty
 
-	def setDirty(self, dirty):
-		self.__dirty = dirty
+    def get_type(self):
+        """Returns the order type"""
+        return self.__type
 
-	def getType(self):
-		"""Returns the order type"""
-		return self.__type
+    def get_action(self):
+        """Returns the order action."""
+        return self.__action
 
-	def getAction(self):
-		"""Returns the order action."""
-		return self.__action
+    def get_state(self):
+        """Returns the order state.
 
-	def getState(self):
-		"""Returns the order state.
+        Valid order states are:
+        * Order.State.ACCEPTED (the initial state).
+        * Order.State.CANCELED
+        * Order.State.FILLED
+        """
+        return self.__state
 
-		Valid order states are:
-		 * Order.State.ACCEPTED (the initial state).
-		 * Order.State.CANCELED
-		 * Order.State.FILLED
-		"""
-		return self.__state
+    def is_accepted(self):
+        """Returns True if the order state is Order.State.ACCEPTED."""
+        return self.__state == Order.State.ACCEPTED
 
-	def isAccepted(self):
-		"""Returns True if the order state is Order.State.ACCEPTED."""
-		return self.__state == Order.State.ACCEPTED
+    def is_canceled(self):
+        """Returns True if the order state is Order.State.CANCELED."""
+        return self.__state == Order.State.CANCELED
 
-	def isCanceled(self):
-		"""Returns True if the order state is Order.State.CANCELED."""
-		return self.__state == Order.State.CANCELED
+    def is_filled(self):
+        """Returns True if the order state is Order.State.FILLED."""
+        return self.__state == Order.State.FILLED
 
-	def isFilled(self):
-		"""Returns True if the order state is Order.State.FILLED."""
-		return self.__state == Order.State.FILLED
+    def get_symbol(self):
+        """Returns the symbol identifier."""
+        return self.__symbol
 
-	def getInstrument(self):
-		"""Returns the instrument identifier."""
-		return self.__instrument
+    def get_quantity(self):
+        """Returns the quantity."""
+        return self.__quantity
 
-	def getQuantity(self):
-		"""Returns the quantity."""
-		return self.__quantity
+    def set_quantity(self, quantity):
+        """Updates the quantity."""
+        self.__quantity = quantity
+        self.set_dirty(True)
 
-	def setQuantity(self, quantity):
-		"""Updates the quantity."""
-		self.__quantity = quantity
-		self.setDirty(True)
+    def get_good_until_canceled(self):
+        """Returns True if the order is good till canceled."""
+        return self.__good_until_canceled
 
-	def getGoodTillCanceled(self):
-		"""Returns True if the order is good till canceled."""
-		return self.__goodTillCanceled
+    def set_good_until_canceled(self, good_until_canceled):
+        """Sets if the order should be good till canceled.
+        Orders that are not filled by the time the session closes will be will be automatically canceled
+        if they were not set as good till canceled
 
-	def setGoodTillCanceled(self, goodTillCanceled):
-		"""Sets if the order should be good till canceled.
-		Orders that are not filled by the time the session closes will be will be automatically canceled
-		if they were not set as good till canceled
+        :param good_until_canceled: True if the order should be good till canceled.
+        :type good_until_canceled: boolean.
+        """
+        self.__good_until_canceled = good_until_canceled
+        self.set_dirty(True)
 
-		:param goodTillCanceled: True if the order should be good till canceled.
-		:type goodTillCanceled: boolean.
-		"""
-		self.__goodTillCanceled = goodTillCanceled
-		self.setDirty(True)
+    def get_all_or_none(self):
+        """Returns True if the order should be completely filled or else canceled."""
+        return self.__all_or_none
 
-	def getAllOrNone(self):
-		"""Returns True if the order should be completely filled or else canceled."""
-		return self.__allOrNone
+    def set_all_or_none(self, all_or_none):
+        """Sets the All-Or-None property for this order.
 
-	def setAllOrNone(self, allOrNone):
-		"""Sets the All-Or-None property for this order.
+        :param all_or_none: True if the order should be completely filled or else canceled.
+        :type all_or_none: boolean.
+        """
+        self.__all_or_none = all_or_none
+        self.set_dirty(True)
 
-		:param allOrNone: True if the order should be completely filled or else canceled.
-		:type allOrNone: boolean.
-		"""
-		self.__allOrNone = allOrNone
-		self.setDirty(True)
+    def set_execution_info(self, order_execution_info):
+        self.__execution_info = order_execution_info
+        self.__state = Order.State.FILLED
 
-	def setExecuted(self, orderExecutionInfo):
-		self.__executionInfo = orderExecutionInfo
-		self.__state = Order.State.FILLED
+    def set_state(self, state):
+        self.__state = state
 
-	def setState(self, state):
-		self.__state = state
+    def get_execution_info(self):
+        """Returns the order execution info if the order was filled, or None otherwise.
 
-	def getExecutionInfo(self):
-		"""Returns the order execution info if the order was filled, or None otherwise.
+        :rtype: :class:`OrderExecutionInfo`.
+        """
+        return self.__execution_info
 
-		:rtype: :class:`OrderExecutionInfo`.
-		"""
-		return self.__executionInfo
-	
+
 class MarketOrder(Order):
-	"""Base class for market orders.
+    """Base class for market orders.
 
-	.. note::
+    .. note::
+        This is a base class and should not be used directly.
+    """
+    def __init__(self, action, symbol, quantity, on_close):
+        Order.__init__(self, Order.Type.MARKET, action, symbol, quantity)
+        self.__on_close = on_close
 
-		This is a base class and should not be used directly.
-	"""
+    def get_fill_on_close(self):
+        """Returns True if the order should be filled as close to the closing price as possible (Market-On-Close order)."""
+        return self.__on_close
 
-	def __init__(self, action, instrument, quantity, onClose):
-		Order.__init__(self, Order.Type.MARKET, action, instrument, quantity)
-		self.__onClose = onClose
+    def set_fill_on_close(self, on_close):
+        """Sets if the order should be filled as close to the closing price as possible (Market-On-Close order)."""
+        self.__on_close = on_close
+        self.set_dirty(True)
 
-	def getFillOnClose(self):
-		"""Returns True if the order should be filled as close to the closing price as possible (Market-On-Close order)."""
-		return self.__onClose
-
-	def setFillOnClose(self, onClose):
-		"""Sets if the order should be filled as close to the closing price as possible (Market-On-Close order)."""
-		self.__onClose = onClose
-		self.setDirty(True)
 
 class LimitOrder(Order):
-	"""Base class for limit orders.
+    """Base class for limit orders.
 
-	.. note::
+    .. note::
+        This is a base class and should not be used directly.
+    """
+    def __init__(self, action, symbol, limit_price, quantity):
+        Order.__init__(self, Order.Type.LIMIT, action, symbol, quantity)
+        self.__limit_price = limit_price
 
-		This is a base class and should not be used directly.
-	"""
+    def get_limit_price(self):
+        """Returns the limit price."""
+        return self.__limit_price
 
-	def __init__(self, action, instrument, limitPrice, quantity):
-		Order.__init__(self, Order.Type.LIMIT, action, instrument, quantity)
-		self.__limitPrice = limitPrice
+    def set_limit_price(self, limit_price):
+        """Updates the limit price."""
+        self.__limit_price = limit_price
+        self.set_dirty(True)
 
-	def getLimitPrice(self):
-		"""Returns the limit price."""
-		return self.__limitPrice
-
-	def setLimitPrice(self, limitPrice):
-		"""Updates the limit price."""
-		self.__limitPrice = limitPrice
-		self.setDirty(True)
 
 class StopOrder(Order):
-	"""Base class for stop orders.
+    """Base class for stop orders.
 
-	.. note::
+    .. note::
+        This is a base class and should not be used directly.
+    """
+    def __init__(self, action, symbol, stop_price, quantity):
+        Order.__init__(self, Order.Type.STOP, action, symbol, quantity)
+        self.__stop_price = stop_price
 
-		This is a base class and should not be used directly.
-	"""
+    def get_stop_price(self):
+        """Returns the stop price."""
+        return self.__stop_price
 
-	def __init__(self, action, instrument, stopPrice, quantity):
-		Order.__init__(self, Order.Type.STOP, action, instrument, quantity)
-		self.__stopPrice = stopPrice
+    def set_stop_price(self, stop_price):
+        """Updates the stop price."""
+        self.__stop_price = stop_price
+        self.set_dirty(True)
 
-	def getStopPrice(self):
-		"""Returns the stop price."""
-		return self.__stopPrice
-
-	def setStopPrice(self, stopPrice):
-		"""Updates the stop price."""
-		self.__stopPrice = stopPrice
-		self.setDirty(True)
 
 class StopLimitOrder(Order):
-	"""Base class for stop limit orders.
+    """Base class for stop limit orders.
 
-	.. note::
+    .. note::
+        This is a base class and should not be used directly.
+    """
+    def __init__(self, action, symbol, limit_price, stop_price, quantity):
+        Order.__init__(self, Order.Type.STOP_LIMIT, action, symbol, quantity)
+        self.__limit_price = limit_price
+        self.__stop_price = stop_price
+        self.__limit_order_active = False # Set to true when the limit order is activated (stop price is hit)
 
-		This is a base class and should not be used directly.
-	"""
+    def get_limit_price(self):
+        """Returns the limit price."""
+        return self.__limit_price
 
-	def __init__(self, action, instrument, limitPrice, stopPrice, quantity):
-		Order.__init__(self, Order.Type.STOP_LIMIT, action, instrument, quantity)
-		self.__limitPrice = limitPrice
-		self.__stopPrice = stopPrice
-		self.__limitOrderActive = False # Set to true when the limit order is activated (stop price is hit)
-		
-	def getLimitPrice(self):
-		"""Returns the limit price."""
-		return self.__limitPrice
+    def set_limit_price(self, limit_price):
+        """Updates the limit price."""
+        self.__limit_price = limit_price
+        self.set_dirty(True)
 
-	def setLimitPrice(self, limitPrice):
-		"""Updates the limit price."""
-		self.__limitPrice = limitPrice
-		self.setDirty(True)
+    def get_stop_price(self):
+        """Returns the stop price."""
+        return self.__stop_price
 
-	def getStopPrice(self):
-		"""Returns the stop price."""
-		return self.__stopPrice
+    def set_stop_price(self, stop_price):
+        """Updates the stop price."""
+        self.__stop_price = stop_price
+        self.set_dirty(True)
 
-	def setStopPrice(self, stopPrice):
-		"""Updates the stop price."""
-		self.__stopPrice = stopPrice
-		self.setDirty(True)
+    def set_limit_order_active(self, limit_order_active):
+        self.__limit_order_active = limit_order_active
 
-	def setLimitOrderActive(self, limitOrderActive):
-		self.__limitOrderActive = limitOrderActive
+    def is_limit_order_active(self):
+        """Returns True if the limit order is active."""
+        return self.__limit_order_active
 
-	def isLimitOrderActive(self):
-		"""Returns True if the limit order is active."""
-		return self.__limitOrderActive
 
 class OrderExecutionInfo:
-	"""Execution information for a filled order."""
-	def __init__(self, price, quantity, commission, dateTime):
-		self.__price = price
-		self.__quantity = quantity
-		self.__commission = commission
-		self.__dateTime = dateTime
+    """Execution information for a filled order."""
+    def __init__(self, price, quantity, commission, date_time):
+        self.__price = price
+        self.__quantity = quantity
+        self.__commission = commission
+        self.__date_time = date_time
 
-	def getPrice(self):
-		"""Returns the fill price."""
-		return self.__price
+    def get_price(self):
+        """Returns the fill price."""
+        return self.__price
 
-	def getQuantity(self):
-		"""Returns the quantity."""
-		return self.__quantity
+    def get_quantity(self):
+        """Returns the quantity."""
+        return self.__quantity
 
-	def getCommission(self):
-		"""Returns the commission applied."""
-		return self.__commission
+    def get_commission(self):
+        """Returns the commission applied."""
+        return self.__commission
 
-	def getDateTime(self):
-		"""Returns the :class:`datatime.datetime` when the order was executed."""
-		return self.__dateTime
+    def get_date_time(self):
+        """Returns the :class:`datatime.datetime` when the order was executed."""
+        return self.__date_time
+
 
 ######################################################################
 ## Base broker class
 class Broker:
-	"""Base class for brokers.
+    """Base class for brokers.
 
-	.. note::
+    .. note::
+        This is a base class and should not be used directly.
+    """
+    def __init__(self):
+        self.__orderUpdatedEvent = observer.Event()
 
-		This is a base class and should not be used directly.
-	"""
+    def get_order_updated_event(self):
+        return self.__orderUpdatedEvent
 
-	def __init__(self):
-		self.__orderUpdatedEvent = observer.Event()
+    def start(self):
+        raise NotImplementedError()
 
-	def getOrderUpdatedEvent(self):
-		return self.__orderUpdatedEvent
-	
-	def start(self):
-		raise NotImplementedError()
+    def stop(self):
+        raise NotImplementedError()
 
-	def stop(self):
-		raise NotImplementedError()
+    def join(self):
+        raise NotImplementedError()
 
-	def join(self):
-		raise NotImplementedError()
+    def get_shares(self, symbol):
+        """Returns the number of shares for a symbol."""
+        raise NotImplementedError()
 
-	def getShares(self, instrument):
-		"""Returns the number of shares for an instrument."""
-		raise NotImplementedError()
+    def get_positions(self):
+        """Returns a dictionary that maps symbols to shares."""
+        raise NotImplementedError()
 
-	def getPositions(self):
-		"""Returns a dictionary that maps instruments to shares."""
-		raise NotImplementedError()
+    def get_active_orders(self):
+        """Returns a sequence with the orders that are still active."""
+        raise NotImplementedError()
 
-	def getActiveOrders(self):
-		"""Returns a sequence with the orders that are still active."""
-		raise NotImplementedError()
+    # Return True if there are not more events to dispatch.
+    def stop_dispatching(self):
+        raise NotImplementedError()
 
-	# Return True if there are not more events to dispatch.
-	def stopDispatching(self):
-		raise NotImplementedError()
+    # Dispatch events.
+    def dispatch(self):
+        raise NotImplementedError()
 
-	# Dispatch events.
-	def dispatch(self):
-		raise NotImplementedError()
-	
-	def placeOrder(self, order):
-		"""Submits an order.
+    def place_order(self, order):
+        """Submits an order.
 
-		:param order: The order to submit.
-		:type order: :class:`Order`.
+        :param order: The order to submit.
+        :type order: :class:`Order`.
 
-		.. note::
-			If the order is filled or canceled, an exception will be raised.
-		"""
-		raise NotImplementedError()
-	
-	def createMarketOrder(self, action, instrument, quantity, onClose = False):
-		"""Creates a Market order.
-		A market order is an order to buy or sell a stock at the best available price.
-		Generally, this type of order will be executed immediately. However, the price at which a market order will be executed
-		is not guaranteed.
+        .. note::
+            If the order is filled or canceled, an exception will be raised.
+        """
+        raise NotImplementedError()
 
-		:param action: The order action.
-		:type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
-		:param instrument: Instrument identifier.
-		:type instrument: string.
-		:param quantity: Order quantity.
-		:type quantity: int.
-		:param onClose: True if the order should be filled as close to the closing price as possible (Market-On-Close order). Default is False.
-		:type onClose: boolean.
-		:rtype: A :class:`MarketOrder` subclass.
-		"""
-		raise NotImplementedError()
+    def create_market_order(self, action, symbol, quantity, on_close=False):
+        """Creates a Market order.
+        A market order is an order to buy or sell a stock at the best available price.
+        Generally, this type of order will be executed immediately. However, the price at which a market order will be executed
+        is not guaranteed.
 
-	def createLimitOrder(self, action, instrument, limitPrice, quantity): 
-		"""Creates a Limit order.
-		A limit order is an order to buy or sell a stock at a specific price or better.
-		A buy limit order can only be executed at the limit price or lower, and a sell limit order can only be executed at the
-		limit price or higher.		
+        :param action: The order action.
+        :type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
+        :param symbol: Instrument identifier.
+        :type symbol: string.
+        :param quantity: Order quantity.
+        :type quantity: int.
+        :param on_close: True if the order should be filled as close to the closing price as possible (Market-On-Close order). Default is False.
+        :type on_close: boolean.
+        :rtype: A :class:`MarketOrder` subclass.
+        """
+        raise NotImplementedError()
 
-		:param action: The order action.
-		:type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
-		:param instrument: Instrument identifier.
-		:type instrument: string.
-		:param limitPrice: The order price.
-		:type limitPrice: float
-		:param quantity: Order quantity.
-		:type quantity: int.
-		:rtype: A :class:`LimitOrder` subclass.
-		"""
-		raise NotImplementedError()
+    def create_limit_order(self, action, symbol, limit_price, quantity):
+        """Creates a Limit order.
+        A limit order is an order to buy or sell a stock at a specific price or better.
+        A buy limit order can only be executed at the limit price or lower, and a sell limit order can only be executed at the
+        limit price or higher.
 
-	def createStopOrder(self, action, instrument, stopPrice, quantity): 
-		"""Creates a Stop order.
-		A stop order, also referred to as a stop-loss order, is an order to buy or sell a stock once the price of the stock
-		reaches a specified price, known as the stop price.
-		When the stop price is reached, a stop order becomes a market order.
-		A buy stop order is entered at a stop price above the current market price. Investors generally use a buy stop order
-		to limit a loss or to protect a profit on a stock that they have sold short.
-		A sell stop order is entered at a stop price below the current market price. Investors generally use a sell stop order
-		to limit a loss or to protect a profit on a stock that they own.
+        :param action: The order action.
+        :type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
+        :param symbol: Instrument identifier.
+        :type symbol: string.
+        :param limit_price: The order price.
+        :type limit_price: float
+        :param quantity: Order quantity.
+        :type quantity: int.
+        :rtype: A :class:`LimitOrder` subclass.
+        """
+        raise NotImplementedError()
 
-		:param action: The order action.
-		:type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
-		:param instrument: Instrument identifier.
-		:type instrument: string.
-		:param stopPrice: The trigger price.
-		:type stopPrice: float
-		:param quantity: Order quantity.
-		:type quantity: int.
-		:rtype: A :class:`StopOrder` subclass.
-		"""
-		raise NotImplementedError()
+    def create_stop_order(self, action, symbol, stop_price, quantity):
+        """Creates a Stop order.
+        A stop order, also referred to as a stop-loss order, is an order to buy or sell a stock once the price of the stock
+        reaches a specified price, known as the stop price.
+        When the stop price is reached, a stop order becomes a market order.
+        A buy stop order is entered at a stop price above the current market price. Investors generally use a buy stop order
+        to limit a loss or to protect a profit on a stock that they have sold short.
+        A sell stop order is entered at a stop price below the current market price. Investors generally use a sell stop order
+        to limit a loss or to protect a profit on a stock that they own.
 
-	def createStopLimitOrder(self, action, instrument, stopPrice, limitPrice, quantity): 
-		"""Creates a Stop-Limit order.
-		A stop-limit order is an order to buy or sell a stock that combines the features of a stop order and a limit order.
-		Once the stop price is reached, a stop-limit order becomes a limit order that will be executed at a specified price
-		(or better). The benefit of a stop-limit order is that the investor can control the price at which the order can be executed.
+        :param action: The order action.
+        :type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
+        :param symbol: Instrument identifier.
+        :type symbol: string.
+        :param stop_price: The trigger price.
+        :type stop_price: float
+        :param quantity: Order quantity.
+        :type quantity: int.
+        :rtype: A :class:`StopOrder` subclass.
+        """
+        raise NotImplementedError()
 
-		:param action: The order action.
-		:type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
-		:param instrument: Instrument identifier.
-		:type instrument: string.
-		:param stopPrice: The trigger price.
-		:type stopPrice: float
-		:param limitPrice: The price for the limit order.
-		:type limitPrice: float
-		:param quantity: Order quantity.
-		:type quantity: int.
-		:rtype: A :class:`StopLimitOrder` subclass.
-		"""
-		raise NotImplementedError()
+    def create_stop_limit_order(self, action, symbol, stop_price, limit_price, quantity):
+        """Creates a Stop-Limit order.
+        A stop-limit order is an order to buy or sell a stock that combines the features of a stop order and a limit order.
+        Once the stop price is reached, a stop-limit order becomes a limit order that will be executed at a specified price
+        (or better). The benefit of a stop-limit order is that the investor can control the price at which the order can be executed.
 
-	def cancelOrder(self, order):
-		"""Requests an order to be canceled. If the order is filled an Exception is raised.
+        :param action: The order action.
+        :type action: Order.Action.BUY, or Order.Action.BUY_TO_COVER, or Order.Action.SELL or Order.Action.SELL_SHORT.
+        :param symbol: Instrument identifier.
+        :type symbol: string.
+        :param stop_price: The trigger price.
+        :type stop_price: float
+        :param limit_price: The price for the limit order.
+        :type limit_price: float
+        :param quantity: Order quantity.
+        :type quantity: int.
+        :rtype: A :class:`StopLimitOrder` subclass.
+        """
+        raise NotImplementedError()
 
-		:param order: The order to cancel.
-		:type order: :class:`Order`.
-		"""
-		raise NotImplementedError()
+    def cancel_order(self, order):
+        """Requests an order to be canceled. If the order is filled an Exception is raised.
 
+        :param order: The order to cancel.
+        :type order: :class:`Order`.
+        """
+        raise NotImplementedError()

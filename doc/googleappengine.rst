@@ -77,7 +77,7 @@ Next, you'll download 3 years of daily bars for 'Dow Jones Industrial Average': 
 
 and then upload those to your app with the following command: ::
 
-    python googleappengine/tools/uploadbars.py --instrument=dia --url=http://pyalgotrade-tutorial.appspot.com/remote_api dia-2009.csv dia-2010.csv dia-2011.csv
+    python googleappengine/tools/uploadbars.py --symbol=dia --url=http://pyalgotrade-tutorial.appspot.com/remote_api dia-2009.csv dia-2010.csv dia-2011.csv
 
 uploadbars.py uses the appcfg.py utility from the **Google App Engine SDK for Python**, so you'll be asked for your email
 and password. If appcfg.py is not in the PATH, then you'll need to supply the --appcfg_path parameter too.
@@ -108,7 +108,7 @@ The output should look like this: ::
 
 Note that this command requires 3 important things:
 
- * The instrument's symbol for the bars that you're about to upload.
+ * The symbol's symbol for the bars that you're about to upload.
  * The url for your application's remote api. 
  * The cvs files that you want to upload
 

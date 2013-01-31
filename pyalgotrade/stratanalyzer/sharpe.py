@@ -24,51 +24,51 @@ from pyalgotrade.utils import stats
 
 import math
 
-def sharpe_ratio(returns, riskFreeRate, tradingPeriods, annualized = True):
-	ret = 0.0
 
-	# From http://en.wikipedia.org/wiki/Sharpe_ratio: if Rf is a constant risk-free return throughout the period,
-	# then stddev(R - Rf) = stddev(R).
-	volatility = stats.stddev(returns, 1)
+def sharpe_ratio(returns, risk_free_rate, trading_periods, annualized=True):
+    ret = 0.0
 
-	if volatility != 0:
-		excessReturns = [dailyRet-(riskFreeRate/float(tradingPeriods)) for dailyRet in returns]
-		avgExcessReturns = stats.mean(excessReturns)
-		ret = avgExcessReturns / volatility
-		if annualized:
-			ret = ret * math.sqrt(tradingPeriods)
-	return ret
+    # From http://en.wikipedia.org/wiki/Sharpe_ratio: if Rf is a constant risk-free return throughout the period,
+    # then stddev(R - Rf) = stddev(R).
+    volatility = stats.stddev(returns, 1)
+
+    if volatility != 0:
+        excess_returns = [daily_return - (risk_free_rate/float(trading_periods)) for daily_return in returns]
+        average_excess_returns = stats.mean(excess_returns)
+        ret = average_excess_returns / volatility
+        if annualized:
+            ret = ret * math.sqrt(trading_periods)
+    return ret
+
 
 class SharpeRatio(stratanalyzer.StrategyAnalyzer):
-	"""A :class:`pyalgotrade.stratanalyzer.StrategyAnalyzer` that calculates
-	Sharpe ratio for the whole portfolio."""
+    """A :class:`pyalgotrade.stratanalyzer.StrategyAnalyzer` that calculates
+    Sharpe ratio for the whole portfolio."""
+    def __init__(self):
+        self.__net_returns = []
 
-	def __init__(self):
-		self.__netReturns = []
+    def before_attach(self, strat):
+        # Get or create a shared ReturnsAnalyzerBase
+        analyzer = returns.ReturnsAnalyzerBase.get_or_create_shared(strat)
+        analyzer.get_event().subscribe(self.__on_returns)
 
-	def beforeAttach(self, strat):
-		# Get or create a shared ReturnsAnalyzerBase
-		analyzer = returns.ReturnsAnalyzerBase.getOrCreateShared(strat)
-		analyzer.getEvent().subscribe(self.__onReturns)
+    def __on_returns(self, returns_analyzer_base):
+        self.__net_returns.append(returns_analyzer_base.get_net_return())
 
-	def __onReturns(self, returnsAnalyzerBase):
-		self.__netReturns.append(returnsAnalyzerBase.getNetReturn())
+    def get_sharpe_ratio(self, risk_free_rate, trading_periods, annualized=True):
+        """
+        Returns the Sharpe ratio for the strategy execution.
+        If the volatility is 0, 0 is returned.
 
-	def getSharpeRatio(self, riskFreeRate, tradingPeriods, annualized = True):
-		"""
-		Returns the Sharpe ratio for the strategy execution.
-		If the volatility is 0, 0 is returned.
+        :param risk_free_rate: The risk free rate per annum.
+        :type risk_free_rate: int/float.
+        :param trading_periods: The number of trading periods per annum.
+        :type trading_periods: int/float.
+        :param annualized: True if the sharpe ratio should be annualized.
+        :type annualized: boolean.
 
-		:param riskFreeRate: The risk free rate per annum.
-		:type riskFreeRate: int/float.
-		:param tradingPeriods: The number of trading periods per annum.
-		:type tradingPeriods: int/float.
-		:param annualized: True if the sharpe ratio should be annualized.
-		:type annualized: boolean.
-
-		.. note::
-			* If using daily bars, tradingPeriods should be set to 252.
-			* If using hourly bars (with 6.5 trading hours a day) then tradingPeriods should be set to 252 * 6.5 = 1638.
-		"""
-		return sharpe_ratio(self.__netReturns, riskFreeRate, tradingPeriods, annualized)
-
+        .. note::
+            * If using daily bars, trading_periods should be set to 252.
+            * If using hourly bars (with 6.5 trading hours a day) then trading_periods should be set to 252 * 6.5 = 1638.
+        """
+        return sharpe_ratio(self.__net_returns, risk_free_rate, trading_periods, annualized)

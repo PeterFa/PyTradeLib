@@ -16,8 +16,8 @@ When using **talib** standalone you do something like this: ::
 
 To use the **pyalgotrade.talibext.indicator** module in your strategies you should do something like this: ::
 
-    def onBars(self, bars):
-        closeDs = self.getFeed().getDataSeries("orcl").getCloseDataSeries()
+    def on_bars(self, bars):
+        closeDs = self.get_feed().get_data_series("orcl").get_close_data_series()
         upper, middle, lower = pyalgotrade.talibext.indicator.BBANDS(closeDs, 100, matype=talib.MA_T3)
         if upper != None:
             print "%s" % upper[-1]
@@ -31,8 +31,8 @@ shown in the example above.
 If the parameter name is **barDs**, then you should pass a :class:`pyalgotrade.dataseries.BarDataSeries` instance, like in the next
 example: ::
 
-    def onBars(self, bars):
-        barDs = self.getFeed().getDataSeries("orcl")
+    def on_bars(self, bars):
+        barDs = self.get_feed().get_data_series("orcl")
         sar = indicator.SAR(barDs, 100)
         if sar != None:
             print "%s" % sar[-1]

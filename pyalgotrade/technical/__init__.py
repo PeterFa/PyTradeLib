@@ -34,31 +34,31 @@ class TechnicalIndicatorBase(dataseries.DataSeries):
 		return self.__windowSize
 
 	# Override to implement filtering logic. Should never be called directly.
-	# firstPos <= lastPos
-	def calculateValue(self, firstPos, lastPos):
+	# first_idx <= last_idx
+	def calculateValue(self, first_idx, last_idx):
 		"""This method has to be overriden to add the filtering logic and return a new value.
 
-		:param firstPos: Absolute position for the first value to use from the DataSeries being filtered.
-		:type firstPos: int.
-		:param lastPos: Absolute position for the last value to use from the DataSeries being filtered.
-		:type lastPos: int.
+		:param first_idx: Absolute position for the first value to use from the DataSeries being filtered.
+		:type first_idx: int.
+		:param last_idx: Absolute position for the last value to use from the DataSeries being filtered.
+		:type last_idx: int.
 		"""
 		raise Exception("Not implemented")
 
-	def getValueAbsolute(self, pos):
+	def get_value_absolute(self, pos):
 		# Check that there are enough values to calculate this (given the current window size and the nested ones).
-		if pos < self.getFirstValidPos() or pos >= self.getLength():
+		if pos < self.get_first_valid_index() or pos >= self.get_length():
 			return None
  
 		# Check that we have enough values to use
-		firstPos = pos - self.__windowSize + 1
-		assert(firstPos >= 0)
+		first_idx = pos - self.__windowSize + 1
+		assert(first_idx >= 0)
  
 		# Try to get the value from the cache.
 		if self.getCache().isCached(pos):
-			ret = self.getCache().getValue(pos)
+			ret = self.getCache().get_value(pos)
 		else:
-			ret = self.calculateValue(firstPos, pos)
+			ret = self.calculateValue(first_idx, pos)
 			# Avoid caching None's in case a invalid pos is requested that becomes valid in the future.
 			if ret != None:
 				self.getCache().putValue(pos, ret)
@@ -82,15 +82,15 @@ class DataSeriesFilter(TechnicalIndicatorBase):
 		TechnicalIndicatorBase.__init__(self, windowSize, cacheSize)
 		self.__dataSeries = dataSeries
 
-	def getFirstValidPos(self):
-		return (self.getWindowSize() - 1) + self.__dataSeries.getFirstValidPos()
+	def get_first_valid_index(self):
+		return (self.getWindowSize() - 1) + self.__dataSeries.get_first_valid_index()
 
-	def getDataSeries(self):
+	def get_data_series(self):
 		"""Returns the :class:`pyalgotrade.dataseries.DataSeries` being filtered."""
 		return self.__dataSeries
 
-	def getLength(self):
-		return self.__dataSeries.getLength()
+	def get_length(self):
+		return self.__dataSeries.get_length()
 
 # Cache with FIFO replacement policy.
 class Cache:
@@ -103,7 +103,7 @@ class Cache:
 	def isCached(self, pos):
 		return pos in self.__cache
 
-	def getValue(self, pos):
+	def get_value(self, pos):
 		return self.__cache.get(pos)
 
 	def putValue(self, pos, value):

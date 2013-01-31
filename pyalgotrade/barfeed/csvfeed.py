@@ -31,102 +31,100 @@ import pytz
 
 # Interface for csv row parsers.
 class RowParser:
-	def parseBar(self, csvRowDict):
-		raise Exception("Not implemented")
+    def parse_bar(self, csv_row_dict):
+        raise Exception("Not implemented")
 
-	def getFieldNames(self):
-		raise Exception("Not implemented")
+    def get_field_names(self):
+        raise Exception("Not implemented")
 
-	def getDelimiter(self):
-		raise Exception("Not implemented")
+    def get_delimiter(self):
+        raise Exception("Not implemented")
 
 # Interface for bar filters.
 class BarFilter:
-	def includeBar(self, bar_):
-		raise Exception("Not implemented")
+    def include_bar(self, bar_):
+        raise Exception("Not implemented")
 
 class DateRangeFilter(BarFilter):
-	def __init__(self, fromDate = None, toDate = None):
-		self.__fromDate = fromDate
-		self.__toDate = toDate
+    def __init__(self, from_date=None, to_date=None):
+        self.__from_date = from_date
+        self.__to_date = to_date
 
-	def includeBar(self, bar_):
-		if self.__toDate and bar_.getDateTime() > self.__toDate:
-			return False
-		if self.__fromDate and bar_.getDateTime() < self.__fromDate:
-			return False
-		return True
+    def include_bar(self, bar_):
+        if self.__to_date and bar_.get_date_time() > self.__to_date:
+            return False
+        if self.__from_date and bar_.get_date_time() < self.__from_date:
+            return False
+        return True
 
 # US Equities Regular Trading Hours filter
 # Monday ~ Friday
 # 9:30 ~ 16 (GMT-5)
 class USEquitiesRTH(DateRangeFilter):
-	timezone = pytz.timezone("US/Eastern")
+    timezone = pytz.timezone("US/Eastern")
 
-	def __init__(self, fromDate = None, toDate = None):
-		DateRangeFilter.__init__(self, fromDate, toDate)
+    def __init__(self, from_date = None, to_date = None):
+        DateRangeFilter.__init__(self, from_date, to_date)
 
-		self.__fromTime = datetime.time(9, 30, 0)
-		self.__toTime = datetime.time(16, 0, 0)
+        self.__from_time = datetime.time(9, 30, 0)
+        self.__to_time = datetime.time(16, 0, 0)
 
-	def includeBar(self, bar_):
-		ret = DateRangeFilter.includeBar(self, bar_)
-		if ret:
-			# Check day of week
-			barDay = bar_.getDateTime().weekday()
-			if barDay > 4:
-				return False
+    def include_bar(self, bar_):
+        ret = DateRangeFilter.include_bar(self, bar_)
+        if ret:
+            # Check day of week
+            barDay = bar_.get_date_time().weekday()
+            if barDay > 4:
+                return False
 
-			# Check time
-			barTime = dt.localize(bar_.getDateTime(), USEquitiesRTH.timezone).time()
-			if barTime < self.__fromTime:
-				return False
-			if barTime > self.__toTime:
-				return False
-		return ret
+            # Check time
+            barTime = dt.localize(bar_.get_date_time(), USEquitiesRTH.timezone).time()
+            if barTime < self.__from_time:
+                return False
+            if barTime > self.__to_time:
+                return False
+        return ret
 
 class BarFeed(membf.Feed):
-	"""A CSV file based :class:`pyalgotrade.barfeed.BarFeed`.
+    """A CSV file based :class:`pyalgotrade.barfeed.BarFeed`.
 
-	.. note::
-		This is a base class and should not be used directly.
-	"""
+    .. note::
+        This is a base class and should not be used directly.
+    """
 
-	def __init__(self, frequency):
-		membf.Feed.__init__(self, frequency)
-		self.__barFilter = None
-		self.__dailyTime = datetime.time(23, 59, 59)
+    def __init__(self, frequency):
+        membf.Feed.__init__(self, frequency)
+        self.__bar_filter = None
+        self.__daily_time = datetime.time(23, 59, 59)
 
-	def getDailyBarTime(self):
-		"""Returns the time to set to daily bars when that information is not present in CSV files. Defaults to 23:59:59.
+    def get_daily_bar_time(self):
+        """Returns the time to set to daily bars when that information is not present in CSV files. Defaults to 23:59:59.
 
-		:rtype: datetime.time.
-		"""
+        :rtype: datetime.time.
+        """
+        return self.__daily_time
 
-		return self.__dailyTime
+    def set_daily_bar_time(self, time):
+        """Sets the time to set to daily bars when that information is not present in CSV files.
 
-	def setDailyBarTime(self, time):
-		"""Sets the time to set to daily bars when that information is not present in CSV files.
+        :param time: The time to set.
+        :type time: datetime.time.
+        """
+        self.__daily_time = time
 
-		:param time: The time to set.
-		:type time: datetime.time.
-		"""
+    def set_bar_filter(self, bar_filter):
+        self.__bar_filter = bar_filter
 
-		self.__dailyTime = time
+    def add_bars_from_csv(self, symbol, path, row_parser):
+        # Load the csv file
+        loaded_bars = []
+        reader = csv.DictReader(open(path, "r"), fieldnames=row_parser.get_field_names(), delimiter=row_parser.get_delimiter())
+        for row in reader:
+            bar_ = row_parser.parse_bar(row)
+            if bar_ != None and (self.__bar_filter is None or self.__bar_filter.include_bar(bar_)):
+                loaded_bars.append(bar_)
 
-	def setBarFilter(self, barFilter):
-		self.__barFilter = barFilter
-
-	def addBarsFromCSV(self, instrument, path, rowParser):
-		# Load the csv file
-		loadedBars = []
-		reader = csv.DictReader(open(path, "r"), fieldnames=rowParser.getFieldNames(), delimiter=rowParser.getDelimiter())
-		for row in reader:
-			bar_ = rowParser.parseBar(row)
-			if bar_ != None and (self.__barFilter is None or self.__barFilter.includeBar(bar_)):
-				loadedBars.append(bar_)
-
-		self.addBarsFromSequence(instrument, loadedBars)
+        self.add_bars_from_sequence(symbol, loaded_bars)
 
 ######################################################################
 ## Yahoo CSV parser
@@ -138,53 +136,53 @@ class BarFeed(membf.Feed):
 # The csv Date column must have the following format: YYYY-MM-DD
 
 class YahooRowParser(RowParser):
-	def __init__(self, dailyBarTime, timezone = None):
-		self.__dailyBarTime = dailyBarTime
-		self.__timezone = timezone
+    def __init__(self, daily_bar_time, timezone = None):
+        self.__daily_bar_time = daily_bar_time
+        self.__timezone = timezone
 
-	def __parseDate(self, dateString):
-		ret = datetime.datetime.strptime(dateString, "%Y-%m-%d")
-		# Time on Yahoo! Finance CSV files is empty. If told to set one, do it.
-		if self.__dailyBarTime != None:
-			ret = datetime.datetime.combine(ret, self.__dailyBarTime)
-		# Localize the datetime if a timezone was given.
-		if self.__timezone:
-			ret = dt.localize(ret, self.__timezone)
-		return ret
+    def __parse_date(self, date_str):
+        ret = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        # Time on Yahoo! Finance CSV files is empty. If told to set one, do it.
+        if self.__daily_bar_time != None:
+            ret = datetime.datetime.combine(ret, self.__daily_bar_time)
+        # Localize the datetime if a timezone was given.
+        if self.__timezone:
+            ret = dt.localize(ret, self.__timezone)
+        return ret
 
-	def getFieldNames(self):
-		# It is expected for the first row to have the field names.
-		return None
+    def get_field_names(self):
+        # It is expected for the first row to have the field names.
+        return None
 
-	def getDelimiter(self):
-		return ","
+    def get_delimiter(self):
+        return ","
 
-	def parseBar(self, csvRowDict):
-		dateTime = self.__parseDate(csvRowDict["Date"])
-		close = float(csvRowDict["Close"])
-		open_ = float(csvRowDict["Open"])
-		high = float(csvRowDict["High"])
-		low = float(csvRowDict["Low"])
-		volume = float(csvRowDict["Volume"])
-		adjClose = float(csvRowDict["Adj Close"])
-		return bar.Bar(dateTime, open_, high, low, close, volume, adjClose)
+    def parse_bar(self, csv_row_dict):
+        date_time = self.__parse_date(csv_row_dict["Date"])
+        close = float(csv_row_dict["Close"])
+        open_ = float(csv_row_dict["Open"])
+        high = float(csv_row_dict["High"])
+        low = float(csv_row_dict["Low"])
+        volume = float(csv_row_dict["Volume"])
+        adj_close = float(csv_row_dict["Adj Close"])
+        return bar.Bar(date_time, open_, high, low, close, volume, adj_close)
 
 class YahooFeed(BarFeed):
-	def __init__(self, timezone = None, skipWarning=False):
-		if type(timezone) == types.IntType:
-			raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
+    def __init__(self, timezone=None, skip_warning=False):
+        if type(timezone) == types.IntType:
+            raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
 
-		if not skipWarning:
-			warninghelpers.deprecation_warning("pyalgotrade.barfeed.csvfeed.YahooFeed will be deprecated in the next version. Please use pyalgotrade.barfeed.yahoofeed.Feed instead.", stacklevel=2)
+        if not skip_warning:
+            warninghelpers.deprecation_warning("pyalgotrade.barfeed.csvfeed.YahooFeed will be deprecated in the next version. Please use pyalgotrade.barfeed.yahoofeed.Feed instead.", stacklevel=2)
 
-		BarFeed.__init__(self, barfeed.Frequency.DAY)
-		self.__timezone = timezone
-	
-	def addBarsFromCSV(self, instrument, path, timezone = None):
-		if type(timezone) == types.IntType:
-			raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
+        BarFeed.__init__(self, barfeed.Frequency.DAY)
+        self.__timezone = timezone
+    
+    def add_bars_from_csv(self, symbol, path, timezone = None):
+        if type(timezone) == types.IntType:
+            raise Exception("timezone as an int parameter is not supported anymore. Please use a pytz timezone instead.")
 
-		if timezone is None:
-			timezone = self.__timezone
-		rowParser = YahooRowParser(self.getDailyBarTime(), timezone)
-		BarFeed.addBarsFromCSV(self, instrument, path, rowParser)
+        if timezone is None:
+            timezone = self.__timezone
+        row_parser = YahooRowParser(self.get_daily_bar_time(), timezone)
+        BarFeed.add_bars_from_csv(self, symbol, path, row_parser)

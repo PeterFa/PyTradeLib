@@ -21,11 +21,11 @@
 import logging
 
 def get_logger(name, level=logging.DEBUG):
-	logFormat = "%(levelname)s %(asctime)s: %(message)s"
-	ret = logging.getLogger()
-	ret.setLevel(level)
-	handler = logging.StreamHandler()
-	handler.setFormatter(logging.Formatter(logFormat))
-	ret.addHandler(handler)
-	return ret
+    log_format = "%(levelname)s %(asctime)s: %(message)s"
+    ret = logging.getLogger()
+    ret.setLevel(level)
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter(log_format))
+    ret.addHandler(handler)
+    return ret
 

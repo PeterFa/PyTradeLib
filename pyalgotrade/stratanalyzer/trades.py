@@ -24,176 +24,173 @@ from pyalgotrade.stratanalyzer import returns
 
 import numpy as np
 
+
 class Trades(stratanalyzer.StrategyAnalyzer):
-	"""A :class:`pyalgotrade.stratanalyzer.StrategyAnalyzer` that records the profit/loss
-	and returns of every completed trade.
+    """A :class:`pyalgotrade.stratanalyzer.StrategyAnalyzer` that records the profit/loss
+    and returns of every completed trade.
 
-	.. note::
-		This analyzer operates on individual completed trades.
-		For example, lets say you start with a $1000 cash, and then you buy 1 share of XYZ
-		for $10 and later sell it for $20:
+    .. note::
+        This analyzer operates on individual completed trades.
+        For example, lets say you start with a $1000 cash, and then you buy 1 share of XYZ
+        for $10 and later sell it for $20:
 
-			* The trade's profit was $10.
-			* The trade's return is 100%, even though your whole portfolio went from $1000 to $1020, a 2% return.
-	"""
+            * The trade's profit was $10.
+            * The trade's return is 100%, even though your whole portfolio went from $1000 to $1020, a 2% return.
+    """
+    def __init__(self):
+        self.__all = []
+        self.__profits = []
+        self.__losses = []
+        self.__all_returns = []
+        self.__positive_returns = []
+        self.__negative_returns = []
+        self.__all_commissions = []
+        self.__profitable_commissions = []
+        self.__unprofitable_commissions = []
+        self.__even_commissions = []
+        self.__even_trades = 0
+        self.__position_trackers = {}
 
-	def __init__(self):
-		self.__all = []
-		self.__profits = []
-		self.__losses = []
-		self.__allReturns = []
-		self.__positiveReturns = []
-		self.__negativeReturns = []
-		self.__allCommissions = []
-		self.__profitableCommissions = []
-		self.__unprofitableCommissions = []
-		self.__evenCommissions = []
-		self.__evenTrades = 0
-		self.__posTrackers = {}
+    def __update_trades(self, position_tracker):
+        price = 0 # The price doesn't matter since the position should be closed.
+        assert(position_tracker.get_shares() == 0)
+        net_profit =  position_tracker.get_net_profit(price)
+        net_return =  position_tracker.get_return(price)
 
-	def __updateTrades(self, posTracker):
-		price = 0 # The price doesn't matter since the position should be closed.
-		assert(posTracker.getShares() == 0)
-		netProfit =  posTracker.getNetProfit(price)
-		netReturn =  posTracker.getReturn(price)
+        if net_profit > 0:
+            self.__profits.append(net_profit)
+            self.__positive_returns.append(net_return )
+            self.__profitable_commissions.append(position_tracker.get_commissions())
+        elif net_profit < 0:
+            self.__losses.append(net_profit)
+            self.__negative_returns.append(net_return )
+            self.__unprofitable_commissions.append(position_tracker.get_commissions())
+        else:
+            self.__even_trades += 1
+            self.__even_commissions.append(position_tracker.get_commissions())
 
-		if netProfit > 0:
-			self.__profits.append(netProfit)
-			self.__positiveReturns.append(netReturn )
-			self.__profitableCommissions.append(posTracker.getCommissions())
-		elif netProfit < 0:
-			self.__losses.append(netProfit)
-			self.__negativeReturns.append(netReturn )
-			self.__unprofitableCommissions.append(posTracker.getCommissions())
-		else:
-			self.__evenTrades += 1
-			self.__evenCommissions.append(posTracker.getCommissions())
+        self.__all.append(net_profit)
+        self.__all_returns.append(net_return)
+        self.__all_commissions.append(position_tracker.get_commissions())
 
-		self.__all.append(netProfit)
-		self.__allReturns.append(netReturn)
-		self.__allCommissions.append(posTracker.getCommissions())
+        position_tracker.update(price)
 
-		posTracker.update(price)
+    def __update_position_tracker(self, position_tracker, price, commission, quantity):
+        current_shares = position_tracker.get_shares()
 
-	def __updatePosTracker(self, posTracker, price, commission, quantity):
-		currentShares = posTracker.getShares()
+        if current_shares > 0: # Current position is long
+            if quantity > 0: # Increase long position
+                position_tracker.buy(quantity, price, commission)
+            else:
+                new_shares = current_shares + quantity
+                if new_shares == 0: # Exit long.
+                    position_tracker.sell(current_shares, price, commission)
+                    self.__update_trades(position_tracker)
+                elif new_shares > 0: # Sell some shares.
+                    position_tracker.sell(quantity*-1, price, commission)
+                else: # Exit long and enter short. Use proportional commissions.
+                    position_tracker.sell(current_shares, price, commission / float(current_shares))
+                    self.__update_trades(position_tracker)
+                    position_tracker.sell(new_shares*-1, price, commission / float(new_shares*-1))
+        elif current_shares < 0: # Current position is short
+            if quantity < 0: # Increase short position
+                position_tracker.sell(quantity*-1, price, commission)
+            else:
+                new_shares = current_shares + quantity
+                if new_shares == 0: # Exit short.
+                    position_tracker.buy(current_shares*-1, price, commission)
+                    self.__update_trades(position_tracker)
+                elif new_shares < 0: # Re-buy some shares.
+                    position_tracker.buy(quantity, price, commission)
+                else: # Exit short and enter long. Use proportional commissions.
+                    position_tracker.buy(current_shares*-1, price, commission / float(current_shares*-1))
+                    self.__update_trades(position_tracker)
+                    position_tracker.buy(new_shares, price, commission / float(new_shares))
+        elif quantity > 0:
+            position_tracker.buy(quantity, price, commission)
+        else:
+            position_tracker.sell(quantity*-1, price, commission)
 
-		if currentShares > 0: # Current position is long
-			if quantity > 0: # Increase long position
-				posTracker.buy(quantity, price, commission)
-			else:
-				newShares = currentShares + quantity
-				if newShares == 0: # Exit long.
-					posTracker.sell(currentShares, price, commission)
-					self.__updateTrades(posTracker)
-				elif newShares > 0: # Sell some shares.
-					posTracker.sell(quantity*-1, price, commission)
-				else: # Exit long and enter short. Use proportional commissions.
-					posTracker.sell(currentShares, price, commission / float(currentShares))
-					self.__updateTrades(posTracker)
-					posTracker.sell(newShares*-1, price, commission / float(newShares*-1))
-		elif currentShares < 0: # Current position is short
-			if quantity < 0: # Increase short position
-				posTracker.sell(quantity*-1, price, commission)
-			else:
-				newShares = currentShares + quantity
-				if newShares == 0: # Exit short.
-					posTracker.buy(currentShares*-1, price, commission)
-					self.__updateTrades(posTracker)
-				elif newShares < 0: # Re-buy some shares.
-					posTracker.buy(quantity, price, commission)
-				else: # Exit short and enter long. Use proportional commissions.
-					posTracker.buy(currentShares*-1, price, commission / float(currentShares*-1))
-					self.__updateTrades(posTracker)
-					posTracker.buy(newShares, price, commission / float(newShares))
-		elif quantity > 0:
-			posTracker.buy(quantity, price, commission)
-		else:
-			posTracker.sell(quantity*-1, price, commission)
+    def __on_order_update(self, broker_, order):
+        # Only interested in filled orders.
+        if not order.is_filled():
+            return
 
-	def __onOrderUpdate(self, broker_, order):
-		# Only interested in filled orders.
-		if not order.isFilled():
-			return
+        # Get or create the tracker for this symbol.
+        try:
+            position_tracker = self.__position_trackers[order.get_symbol()]
+        except KeyError:
+            position_tracker = returns.PositionTracker()
+            self.__position_trackers[order.get_symbol()] = position_tracker
 
-		# Get or create the tracker for this instrument.
-		try:
-			posTracker = self.__posTrackers[order.getInstrument()]
-		except KeyError:
-			posTracker = returns.PositionTracker()
-			self.__posTrackers[order.getInstrument()] = posTracker
+        # Update the tracker for this order.
+        price = order.get_execution_info().get_price()
+        commission = order.get_execution_info().get_commission()
+        action = order.get_action()
+        if action in [broker.Order.Action.BUY, broker.Order.Action.BUY_TO_COVER]:
+            quantity = order.get_execution_info().get_quantity()
+        elif action in [broker.Order.Action.SELL, broker.Order.Action.SELL_SHORT]:
+            quantity = order.get_execution_info().get_quantity() * -1
+        else: # Unknown action
+            assert(False)
 
-		# Update the tracker for this order.
-		price = order.getExecutionInfo().getPrice()
-		commission = order.getExecutionInfo().getCommission()
-		action = order.getAction()
-		if action in [broker.Order.Action.BUY, broker.Order.Action.BUY_TO_COVER]:
-			quantity = order.getExecutionInfo().getQuantity()
-		elif action in [broker.Order.Action.SELL, broker.Order.Action.SELL_SHORT]:
-			quantity = order.getExecutionInfo().getQuantity() * -1
-		else: # Unknown action
-			assert(False)
+        self.__update_position_tracker(position_tracker, price, commission, quantity)
 
-		self.__updatePosTracker(posTracker, price, commission, quantity)
+    def attached(self, strat):
+        strat.get_broker().get_order_updated_event().subscribe(self.__on_order_update)
 
-	def attached(self, strat):
-		strat.getBroker().getOrderUpdatedEvent().subscribe(self.__onOrderUpdate)
+    def get_count(self):
+        """Returns the total number of trades."""
+        return len(self.__all)
 
-	def getCount(self):
-		"""Returns the total number of trades."""
-		return len(self.__all)
+    def get_profitable_count(self):
+        """Returns the number of profitable trades."""
+        return len(self.__profits)
 
-	def getProfitableCount(self):
-		"""Returns the number of profitable trades."""
-		return len(self.__profits)
+    def get_unprofitable_count(self):
+        """Returns the number of unprofitable trades."""
+        return len(self.__losses)
 
-	def getUnprofitableCount(self):
-		"""Returns the number of unprofitable trades."""
-		return len(self.__losses)
+    def get_even_count(self):
+        """Returns the number of trades whose net profit was 0."""
+        return self.__even_trades
 
-	def getEvenCount(self):
-		"""Returns the number of trades whose net profit was 0."""
-		return self.__evenTrades
+    def get_all(self):
+        """Returns a numpy.array with the profits/losses for each trade."""
+        return np.array(self.__all)
 
-	def getAll(self):
-		"""Returns a numpy.array with the profits/losses for each trade."""
-		return np.array(self.__all)
+    def get_profits(self):
+        """Returns a numpy.array with the profits for each profitable trade."""
+        return np.array(self.__profits)
 
-	def getProfits(self):
-		"""Returns a numpy.array with the profits for each profitable trade."""
-		return np.array(self.__profits)
+    def get_losses(self):
+        """Returns a numpy.array with the losses for each unprofitable trade."""
+        return np.array(self.__losses)
 
-	def getLosses(self):
-		"""Returns a numpy.array with the losses for each unprofitable trade."""
-		return np.array(self.__losses)
+    def get_all_returns(self):
+        """Returns a numpy.array with the returns for each trade."""
+        return np.array(self.__all_returns)
 
-	def getAllReturns(self):
-		"""Returns a numpy.array with the returns for each trade."""
-		return np.array(self.__allReturns)
+    def get_positive_returns(self):
+        """Returns a numpy.array with the positive returns for each trade."""
+        return np.array(self.__positive_returns)
 
-	def getPositiveReturns(self):
-		"""Returns a numpy.array with the positive returns for each trade."""
-		return np.array(self.__positiveReturns)
+    def get_negative_returns(self):
+        """Returns a numpy.array with the negative returns for each trade."""
+        return np.array(self.__negative_returns)
 
-	def getNegativeReturns(self):
-		"""Returns a numpy.array with the negative returns for each trade."""
-		return np.array(self.__negativeReturns)
+    def get_commissions_for_all_trades(self):
+        """Returns a numpy.array with the commissions for each trade."""
+        return np.array(self.__all_commissions)
 
-	def getCommissionsForAllTrades(self):
-		"""Returns a numpy.array with the commissions for each trade."""
-		return np.array(self.__allCommissions)
+    def get_commissions_for_profitable_trades(self):
+        """Returns a numpy.array with the commissions for each profitable trade."""
+        return np.array(self.__profitable_commissions)
 
-	def getCommissionsForProfitableTrades(self):
-		"""Returns a numpy.array with the commissions for each profitable trade."""
-		return np.array(self.__profitableCommissions)
+    def get_commissions_for_unprofitable_trades(self):
+        """Returns a numpy.array with the commissions for each unprofitable trade."""
+        return np.array(self.__unprofitable_commissions)
 
-	def getCommissionsForUnprofitableTrades(self):
-		"""Returns a numpy.array with the commissions for each unprofitable trade."""
-		return np.array(self.__unprofitableCommissions)
-
-	def getCommissionsForEvenTrades(self):
-		"""Returns a numpy.array with the commissions for each trade whose net profit was 0."""
-		return np.array(self.__evenCommissions)
-
-
-
+    def get_commissions_for_even_trades(self):
+        """Returns a numpy.array with the commissions for each trade whose net profit was 0."""
+        return np.array(self.__even_commissions)

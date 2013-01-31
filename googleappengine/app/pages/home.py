@@ -26,29 +26,28 @@ import strategies
 import persistence
 
 class HomePage(webapp.RequestHandler):
-	url = "/"
+    url = "/"
 
-	def get(self):
-		templateValues = {}
-		templateValues["logout_url"] = users.create_logout_url("/")
-		templateValues["user"] = users.get_current_user()
-		templateValues["strategies"] = []
+    def get(self):
+        templateValues = {}
+        templateValues["logout_url"] = users.create_logout_url("/")
+        templateValues["user"] = users.get_current_user()
+        templateValues["strategies"] = []
 
-		for strategyClass in strategies.get_strategy_classes():
-			strategyValues = {}
-			strategyValues["class"] = strategyClass
-			strategyValues["url"] = pages.strategy.StrategyPage.getUrl(strategyClass)
-			templateValues["strategies"].append(strategyValues)
+        for strategy_class in strategies.get_strategy_classes():
+            strategyValues = {}
+            strategyValues["class"] = strategy_class
+            strategyValues["url"] = pages.strategy.StrategyPage.getUrl(strategy_class)
+            templateValues["strategies"].append(strategyValues)
 
-		templateValues["active_executions"] = pages.strategy.get_stratexecconfig_for_template(persistence.StratExecConfig.getByStatus([persistence.StratExecConfig.Status.ACTIVE]))
+        templateValues["active_executions"] = pages.strategy.get_stratexecconfig_for_template(persistence.StratExecConfig.getByStatus([persistence.StratExecConfig.Status.ACTIVE]))
 
-		path = os.path.join(os.path.dirname(__file__), "..", "templates", 'index.html')
-		self.response.out.write(template.render(path, templateValues))
+        path = os.path.join(os.path.dirname(__file__), "..", "templates", 'index.html')
+        self.response.out.write(template.render(path, templateValues))
 
 def main():
-	application = webapp.WSGIApplication([(HomePage.url, HomePage)], debug=True)
-	run_wsgi_app(application)
+    application = webapp.WSGIApplication([(HomePage.url, HomePage)], debug=True)
+    run_wsgi_app(application)
 
 if __name__ == "__main__":
-	main()
-
+    main()

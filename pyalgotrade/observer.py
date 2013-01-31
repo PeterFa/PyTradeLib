@@ -19,38 +19,37 @@
 """
 
 class Event:
-	def __init__(self):
-		self.__handlers = []
-		self.__toSubscribe = []
-		self.__toUnsubscribe = []
-		self.__emitting = False
+    def __init__(self):
+        self.__handlers = []
+        self.__to_subscribe = []
+        self.__to_unsubscribe = []
+        self.__emitting = False
 
-	def __applyChanges(self):
-		for handler in self.__toSubscribe:
-			if handler not in self.__handlers:
-				self.__handlers.append(handler)
-		for handler in self.__toUnsubscribe:
-			self.__handlers.remove(handler)
+    def __apply_changes(self):
+        for handler in self.__to_subscribe:
+            if handler not in self.__handlers:
+                self.__handlers.append(handler)
+        for handler in self.__to_unsubscribe:
+            self.__handlers.remove(handler)
 
-		self.__toSubscribe = []
-		self.__toUnsubscribe = []
+        self.__to_subscribe = []
+        self.__to_unsubscribe = []
 
-	def subscribe(self, handler):
-		if self.__emitting:
-			self.__toSubscribe.append(handler)
-		elif handler not in self.__handlers:
-			self.__handlers.append(handler)
+    def subscribe(self, handler):
+        if self.__emitting:
+            self.__to_subscribe.append(handler)
+        elif handler not in self.__handlers:
+            self.__handlers.append(handler)
 
-	def unsubscribe(self, handler):
-		if self.__emitting:
-			self.__toUnsubscribe.append(handler)
-		else:
-			self.__handlers.remove(handler)
+    def unsubscribe(self, handler):
+        if self.__emitting:
+            self.__to_unsubscribe.append(handler)
+        else:
+            self.__handlers.remove(handler)
 
-	def emit(self, *parameters):
-		self.__emitting = True
-		for handler in self.__handlers:
-			handler(*parameters)
-		self.__emitting = False
-		self.__applyChanges()
-
+    def emit(self, *parameters):
+        self.__emitting = True
+        for handler in self.__handlers:
+            handler(*parameters)
+        self.__emitting = False
+        self.__apply_changes()

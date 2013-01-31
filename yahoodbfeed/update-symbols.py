@@ -26,53 +26,53 @@ sys.path.append("..")
 
 import pyalgotrade.logger
 
-logger = pyalgotrade.logger.getLogger("update-symbols")
+logger = pyalgotrade.logger.get_logger("update-symbols")
 
 def get_symbols_filename(market):
-	market = market.lower()
-	return "%s-symbols.txt" % (market)
+    market = market.lower()
+    return "%s-symbols.txt" % (market)
 
 def get_symbols_from_page(url):
-	#<tr class="ro" onclick="location.href='/stockquote/NASDAQ/AAC.htm';" style="color:green;">
-	#	<td><A href="/stockquote/NASDAQ/AAC.htm" title="Display Quote &amp; Chart for NASDAQ,AAC">AAC</A></td>
-	#	<td>Australia Acquisition</td>
-	#	<td align=right>10.03</td>
-	#	<td align=right>10.02</td>
-	#	<td align=right>10.03</td>
-	#	<td align=right>11,000</td>
-	#	<td align="right">0.05</td>
-	#	<td align="center"><IMG src="/images/up.gif"></td>
-	#	<td align="left">0.50</td>
-	#	<td align="right"><a href="/stockquote/NASDAQ/AAC.htm" title="Download Data for NASDAQ,AAC"><img src="/images/dl.gif" width=14 height=14></a>&nbsp;<a href="/stockquote/NASDAQ/AAC.htm" title="View Quote and Chart for NASDAQ,AAC"><img src="/images/chart.gif" width=14 height=14></a></td>
-	#</tr>
+    #<tr class="ro" onclick="location.href='/stockquote/NASDAQ/AAC.htm';" style="color:green;">
+    #	<td><A href="/stockquote/NASDAQ/AAC.htm" title="Display Quote &amp; Chart for NASDAQ,AAC">AAC</A></td>
+    #	<td>Australia Acquisition</td>
+    #	<td align=right>10.03</td>
+    #	<td align=right>10.02</td>
+    #	<td align=right>10.03</td>
+    #	<td align=right>11,000</td>
+    #	<td align="right">0.05</td>
+    #	<td align="center"><IMG src="/images/up.gif"></td>
+    #	<td align="left">0.50</td>
+    #	<td align="right"><a href="/stockquote/NASDAQ/AAC.htm" title="Download Data for NASDAQ,AAC"><img src="/images/dl.gif" width=14 height=14></a>&nbsp;<a href="/stockquote/NASDAQ/AAC.htm" title="View Quote and Chart for NASDAQ,AAC"><img src="/images/chart.gif" width=14 height=14></a></td>
+    #</tr>
 
-	ret = []
-	html = urllib2.urlopen(url).read()
+    ret = []
+    html = urllib2.urlopen(url).read()
 
-	predicate = lambda tag: tag.name == "tr" and (("class", "ro") in tag.attrs or ("class", "re") in tag.attrs)
-	soup = BeautifulSoup.BeautifulSoup(html)
-	tags = soup.findAll(predicate)
-	for tag in tags:
-		ret.append(tag.contents[0].contents[0].contents[0].strip())
-	return ret
+    predicate = lambda tag: tag.name == "tr" and (("class", "ro") in tag.attrs or ("class", "re") in tag.attrs)
+    soup = BeautifulSoup.BeautifulSoup(html)
+    tags = soup.findAll(predicate)
+    for tag in tags:
+        ret.append(tag.contents[0].contents[0].contents[0].strip())
+    return ret
 
 def download_symbols(market):
-	market = market.upper()
-	pages = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-	for x in pages:
-		url = "http://www.eoddata.com/stocklist/%s/%s.htm" % (market, x)
-		logger.info("Processing %s" % url)
-		for symbol in get_symbols_from_page(url):
-			yield symbol
+    market = market.upper()
+    pages = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+    for x in pages:
+        url = "http://www.eoddata.com/stocklist/%s/%s.htm" % (market, x)
+        logger.info("Processing %s" % url)
+        for symbol in get_symbols_from_page(url):
+            yield symbol
 
 def build_symbols_file(market):
-	symbolsFile = open(get_symbols_filename(market), "w")
-	for symbol in download_symbols(market):
-		symbolsFile.write("%s\n" % symbol)
+    symbolsFile = open(get_symbols_filename(market), "w")
+    for symbol in download_symbols(market):
+        symbolsFile.write("%s\n" % symbol)
 
 def main():
-	build_symbols_file("nasdaq")
-	build_symbols_file("nyse")
+    build_symbols_file("nasdaq")
+    build_symbols_file("nyse")
 
 main()
 

@@ -13,8 +13,8 @@ indexes:
 - kind: Bar
   properties:
   - name: barType
-  - name: instrument
-  - name: dateTime
+  - name: symbol
+  - name: date_time
 
 - kind: StratExecConfig
   properties:

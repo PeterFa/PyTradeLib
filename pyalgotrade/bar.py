@@ -19,137 +19,139 @@
 """
 
 class Bar:
-	"""An instrument's prices at a given time.
+    """A symbol's prices at a given time.
 
-	:param dateTime: The date time.
-	:type dateTime: datetime.datetime
-	:param open_: The opening price.
-	:type open_: float
-	:param high: The highest price.
-	:type high: float
-	:param low: The lowest price.
-	:type low: float
-	:param close: The closing price.
-	:type close: float
-	:param volume: The volume.
-	:type volume: float
-	:param close: The adjusted closing price.
-	:type close: float
-	"""
+    :param date_time: The date time.
+    :type date_time: datetime.datetime
+    :param open_: The opening price.
+    :type open_: float
+    :param high: The highest price.
+    :type high: float
+    :param low: The lowest price.
+    :type low: float
+    :param close: The closing price.
+    :type close: float
+    :param volume: The volume.
+    :type volume: float
+    :param adj_close: The adjusted closing price.
+    :type adj_close: float
+    """
 
-	def __init__(self, dateTime, open_, high, low, close, volume, adjClose):
-		assert(high >= open_)
-		assert(high >= low)
-		assert(high >= close)
-		assert(low <= open_)
-		assert(low <= high)
-		assert(low <= close)
+    def __init__(self, date_time, open_, high, low, close, volume, adj_close):
+        assert(high >= open_)
+        assert(high >= low)
+        assert(high >= close)
+        assert(low <= open_)
+        assert(low <= high)
+        assert(low <= close)
 
-		self.__dateTime = dateTime
-		self.__open = open_
-		self.__close = close
-		self.__high = high
-		self.__low = low
-		self.__volume = volume
-		self.__adjClose = adjClose
-		self.__sessionClose = False
-		self.__barsTillSessionClose = None
+        self.__date_time = date_time
+        self.__open = open_
+        self.__close = close
+        self.__high = high
+        self.__low = low
+        self.__volume = volume
+        self.__adj_close = adj_close
+        self.__session_close = False
+        self.__bars_until_session_close = None
 
-	def getDateTime(self):
-		"""Returns the :class:`datetime.datetime`."""
-		return self.__dateTime
+    def get_date_time(self):
+        """Returns the :class:`datetime.datetime`."""
+        return self.__date_time
 
-	def getOpen(self):
-		"""Returns the opening price."""
-		return self.__open
+    def get_open(self):
+        """Returns the opening price."""
+        return self.__open
 
-	def getHigh(self):
-		"""Returns the highest price."""
-		return self.__high
+    def get_high(self):
+        """Returns the highest price."""
+        return self.__high
 
-	def getLow(self):
-		"""Returns the lowest price."""
-		return self.__low
+    def get_low(self):
+        """Returns the lowest price."""
+        return self.__low
 
-	def getClose(self):
-		"""Returns the closing price."""
-		return self.__close
+    def get_close(self):
+        """Returns the closing price."""
+        return self.__close
 
-	def getVolume(self):
-		"""Returns the volume."""
-		return self.__volume
+    def get_volume(self):
+        """Returns the volume."""
+        return self.__volume
 
-	def getAdjOpen(self):
-		return self.__adjClose * self.__open / float(self.__close)
+    def get_adj_open(self):
+        return self.__adj_close * self.__open / float(self.__close)
 
-	def getAdjHigh(self):
-		return self.__adjClose * self.__high / float(self.__close)
+    def get_adj_high(self):
+        return self.__adj_close * self.__high / float(self.__close)
 
-	def getAdjLow(self):
-		return self.__adjClose * self.__low / float(self.__close)
+    def get_adj_low(self):
+        return self.__adj_close * self.__low / float(self.__close)
 
-	def getAdjClose(self):
-		"""Returns the adjusted closing price."""
-		return self.__adjClose
+    def get_adj_close(self):
+        """Returns the adjusted closing price."""
+        return self.__adj_close
 
-	def getSessionClose(self):
-		# Returns True if this is the last bar for the session, or False otherwise.
-		return self.__sessionClose
+    def get_session_close(self):
+        # Returns True if this is the last bar for the session, or False otherwise.
+        return self.__session_close
 
-	def setSessionClose(self, sessionClose):
-		self.__sessionClose = sessionClose
-		if sessionClose:
-			self.__barsTillSessionClose = 0
+    def set_session_close(self, session_close):
+        self.__session_close = session_close
+        if session_close:
+            self.__bars_until_session_close = 0
 
-	def getBarsTillSessionClose(self):
-		return self.__barsTillSessionClose
+    def get_bars_until_session_close(self):
+        return self.__bars_until_session_close
 
-	def setBarsTillSessionClose(self, barsTillSessionClose):
-		self.__barsTillSessionClose = barsTillSessionClose
+    def set_bars_until_session_close(self, bars_until_session_close):
+        self.__bars_until_session_close = bars_until_session_close
 
 class Bars:
-	"""A group of :class:`Bar` objects.
+    """A group of :class:`Bar` objects.
 
-	:param barDict: A map of instrument to :class:`Bar` objects.
-	:type barDict: map.
+    :param bar_dict: A map of symbol to :class:`Bar` objects.
+    :type bar_dict: map.
 
-	.. note::
-		All bars must have the same datetime.
-	"""
-	def __init__(self, barDict):
-		if len(barDict) == 0:
-			raise Exception("No bars supplied")
+    .. note::
+        All bars must have the same datetime.
+    """
+    def __init__(self, bar_dict):
+        if len(bar_dict) == 0:
+            raise Exception("No bars supplied")
 
-		# Check that bar datetimes are in sync
-		firstDateTime = None
-		firstInstrument = None
-		for instrument, currentBar in barDict.iteritems():
-			if firstDateTime is None:
-				firstDateTime = currentBar.getDateTime()
-				firstInstrument = instrument
-			elif currentBar.getDateTime() != firstDateTime:
-				raise Exception("Bar data times are not in sync. %s %s != %s %s" % (instrument, currentBar.getDateTime(), firstInstrument, firstDateTime))
+        # Check that bar datetimes are in sync
+        first_date_time = None
+        first_symbol = None
+        for symbol, current_bar in bar_dict.iteritems():
+            if first_date_time is None:
+                first_date_time = current_bar.get_date_time()
+                first_symbol = symbol
+            elif current_bar.get_date_time() != first_date_time:
+                raise Exception(
+                    "Bar data times are not in sync. %s %s != %s %s" % (
+                        symbol, current_bar.get_date_time(), first_symbol, first_date_time))
 
-		self.__barDict = barDict
-		self.__dateTime = firstDateTime
+        self.__bar_dict = bar_dict
+        self.__date_time = first_date_time
 
-	def __getitem__(self, instrument):
-		"""Returns the :class:`pyalgotrade.bar.Bar` for the given instrument. If the instrument is not found an exception is raised."""
-		return self.__barDict[instrument]
+    def __getitem__(self, symbol):
+        """Returns the :class:`pyalgotrade.bar.Bar` for the given symbol. If the symbol is not found an exception is raised."""
+        return self.__bar_dict[symbol]
 
-	def __contains__(self, instrument):
-		"""Returns True if a :class:`pyalgotrade.bar.Bar` for the given instrument is available."""
-		return instrument in self.__barDict
+    def __contains__(self, symbol):
+        """Returns True if a :class:`pyalgotrade.bar.Bar` for the given symbol is available."""
+        return symbol in self.__bar_dict
 
-	def getInstruments(self):
-		"""Returns the instrument symbols."""
-		return self.__barDict.keys()
+    def get_symbols(self):
+        """Returns the symbol symbols."""
+        return self.__bar_dict.keys()
 
-	def getDateTime(self):
-		"""Returns the :class:`datetime.datetime` for this set of bars."""
-		return self.__dateTime
+    def get_date_time(self):
+        """Returns the :class:`datetime.datetime` for this set of bars."""
+        return self.__date_time
 
-	def getBar(self, instrument):
-		"""Returns the :class:`pyalgotrade.bar.Bar` for the given instrument or None if the instrument is not found."""
-		return self.__barDict.get(instrument, None)
+    def get_bar(self, symbol):
+        """Returns the :class:`pyalgotrade.bar.Bar` for the given symbol or None if the symbol is not found."""
+        return self.__bar_dict.get(symbol, None)
 

@@ -23,46 +23,46 @@ import pytz
 # http://en.wikipedia.org/wiki/List_of_market_opening_times
 
 class MarketSession:
-	"""Base class for market sessions.
+    """Base class for market sessions.
 
-	.. note::
-		This is a base class and should not be used directly.
-	"""
+    .. note::
+        This is a base class and should not be used directly.
+    """
 
-	@classmethod
-	def getTimezone(cls):
-		"""Returns the pytz timezone for the market session."""
-		return cls.timezone
+    @classmethod
+    def getTimezone(cls):
+        """Returns the pytz timezone for the market session."""
+        return cls.timezone
 
 # US
 class NASDAQ(MarketSession):
-	"""NASDAQ market session."""
-	timezone = pytz.timezone("US/Eastern")
+    """NASDAQ market session."""
+    timezone = pytz.timezone("US/Eastern")
 
 class NYSE(MarketSession):
-	"""New York Stock Exchange market session."""
-	timezone = pytz.timezone("US/Eastern")
+    """New York Stock Exchange market session."""
+    timezone = pytz.timezone("US/Eastern")
 
 class USEquities(MarketSession):
-	"""US Equities market session."""
-	timezone = pytz.timezone("US/Eastern")
+    """US Equities market session."""
+    timezone = pytz.timezone("US/Eastern")
 
 # South America
 class MERVAL(MarketSession):
-	"""Buenos Aires (Argentina) market session."""
-	timezone = pytz.timezone("America/Argentina/Buenos_Aires")
+    """Buenos Aires (Argentina) market session."""
+    timezone = pytz.timezone("America/Argentina/Buenos_Aires")
 
 class BOVESPA(MarketSession):
-	"""BOVESPA (Brazil) market session."""
-	timezone = pytz.timezone("America/Sao_Paulo")
+    """BOVESPA (Brazil) market session."""
+    timezone = pytz.timezone("America/Sao_Paulo")
 
 # Europe
 class FTSE(MarketSession):
-	""" London Stock Exchange market session."""
-	timezone = pytz.timezone("Europe/London")
+    """ London Stock Exchange market session."""
+    timezone = pytz.timezone("Europe/London")
 
 # Asia
 class TSE(MarketSession):
-	"""Tokyo Stock Exchange market session."""
-	timezone = pytz.timezone("Asia/Tokyo")
+    """Tokyo Stock Exchange market session."""
+    timezone = pytz.timezone("Asia/Tokyo")
 

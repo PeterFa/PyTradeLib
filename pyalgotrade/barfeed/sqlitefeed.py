@@ -26,119 +26,119 @@ from pyalgotrade.utils import dt
 import sqlite3
 import os
 
-def normalize_instrument(instrument):
-	return instrument.upper()
+def normalize_symbol(symbol):
+    return symbol.upper()
 
 # SQLite DB.
 # Timestamps are stored in UTC.
 class Database(dbfeed.Database):
-	def __init__(self, dbFilePath):
-		self.__instrumentIds = {}
+    def __init__(self, db_file_path):
+        self.__symbol_ids = {}
 
-		# If the file doesn't exist, we'll create it and initialize it.
-		initialize = False
-		if not os.path.exists(dbFilePath):
-			initialize = True
-		self.__connection = sqlite3.connect(dbFilePath)
-		self.__connection.isolation_level = None # To do auto-commit
-		if initialize:
-			self.createSchema()
+        # If the file doesn't exist, we'll create it and initialize it.
+        initialize = False
+        if not os.path.exists(db_file_path):
+            initialize = True
+        self.__connection = sqlite3.connect(db_file_path)
+        self.__connection.isolation_level = None # To do auto-commit
+        if initialize:
+            self.create_schema()
 
-	def __findInstrumentId(self, instrument):
-		cursor = self.__connection.cursor()
-		sql = "select instrument_id from instrument where name = ?"
-		cursor.execute(sql, [instrument])
-		ret = cursor.fetchone()
-		if ret != None:
-			ret = ret[0]
-		cursor.close()
-		return ret
+    def __find_symbol_id(self, symbol):
+        cursor = self.__connection.cursor()
+        sql = "select symbol_id from symbol where name = ?"
+        cursor.execute(sql, [symbol])
+        ret = cursor.fetchone()
+        if ret != None:
+            ret = ret[0]
+        cursor.close()
+        return ret
 
-	def __addInstrument(self, instrument):
-		ret =  self.__connection.execute("insert into instrument (name) values (?)", [instrument])
-		return ret.lastrowid
+    def __add_symbol(self, symbol):
+        ret =  self.__connection.execute("insert into symbol (name) values (?)", [symbol])
+        return ret.lastrowid
 
-	def __getOrCreateInstrument(self, instrument):
-		# Try to get the instrument id from the cache.
-		ret = self.__instrumentIds.get(instrument, None)
-		if ret != None:
-			return ret
-		# If its not cached, get it from the db.
-		ret = self.__findInstrumentId(instrument)
-		# If its not in the db, add it.
-		if ret == None:
-			ret = self.__addInstrument(instrument)
-		# Cache the id.
-		self.__instrumentIds[instrument] = ret
-		return ret
+    def __get_or_create_symbol(self, symbol):
+        # Try to get the symbol id from the cache.
+        ret = self.__symbol_ids.get(symbol, None)
+        if ret != None:
+            return ret
+        # If its not cached, get it from the db.
+        ret = self.__find_symbol_id(symbol)
+        # If its not in the db, add it.
+        if ret == None:
+            ret = self.__add_symbol(symbol)
+        # Cache the id.
+        self.__symbol_ids[symbol] = ret
+        return ret
 
-	def createSchema(self):
-		self.__connection.execute("create table instrument ("
-			+ "instrument_id integer primary key autoincrement"
-			+ ", name text unique not null)")
+    def create_schema(self):
+        self.__connection.execute("create table symbol ("
+            + "symbol_id integer primary key autoincrement"
+            + ", name text unique not null)")
 
-		self.__connection.execute("create table bar ("
-			+ "instrument_id integer references instrument (instrument_id)"
-			+ ",frequency integer not null"
-			+ ",timestamp integer not null"
-			+ ",open real not null"
-			+ ",high real not null"
-			+ ",low real not null"
-			+ ",close real not null"
-			+ ",volume real not null"
-			+ ",adj_close real"
-			+ ",primary key (instrument_id, frequency, timestamp))" )
+        self.__connection.execute("create table bar ("
+            + "symbol_id integer references symbol (symbol_id)"
+            + ",frequency integer not null"
+            + ",timestamp integer not null"
+            + ",open real not null"
+            + ",high real not null"
+            + ",low real not null"
+            + ",close real not null"
+            + ",volume real not null"
+            + ",adj_close real"
+            + ",primary key (symbol_id, frequency, timestamp))" )
 
-	def addBar(self, instrument, bar, frequency):
-		instrument = normalize_instrument(instrument)
-		instrumentId = self.__getOrCreateInstrument(instrument)
-		timeStamp = dt.datetime_to_timestamp(bar.getDateTime())
+    def add_bar(self, symbol, bar, frequency):
+        symbol = normalize_symbol(symbol)
+        symbol_id = self.__get_or_create_symbol(symbol)
+        time_stamp = dt.datetime_to_timestamp(bar.get_date_time())
 
-		try:
-			sql = "insert into bar (instrument_id, frequency, timestamp, open, high, low, close, volume, adj_close) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-			params = [instrumentId, frequency, timeStamp, bar.getOpen(), bar.getHigh(), bar.getLow(), bar.getClose(), bar.getVolume(), bar.getAdjClose()]
-			self.__connection.execute(sql, params)
-		except sqlite3.IntegrityError:
-			sql = "update bar set open = ?, high = ?, low = ?, close = ?, volume = ?, adj_close = ?" \
-					" where instrument_id = ? and frequency = ? and timestamp = ?"
-			params = [bar.getOpen(), bar.getHigh(), bar.getLow(), bar.getClose(), bar.getVolume(), bar.getAdjClose(), instrumentId, frequency, timeStamp]
-			self.__connection.execute(sql, params)
+        try:
+            sql = "insert into bar (symbol_id, frequency, timestamp, open, high, low, close, volume, adj_close) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            params = [symbol_id, frequency, time_stamp, bar.get_open(), bar.get_high(), bar.get_low(), bar.get_close(), bar.get_volume(), bar.get_adj_close()]
+            self.__connection.execute(sql, params)
+        except sqlite3.IntegrityError:
+            sql = "update bar set open = ?, high = ?, low = ?, close = ?, volume = ?, adj_close = ?" \
+                    " where symbol_id = ? and frequency = ? and timestamp = ?"
+            params = [bar.get_open(), bar.get_high(), bar.get_low(), bar.get_close(), bar.get_volume(), bar.get_adj_close(), symbol_id, frequency, time_stamp]
+            self.__connection.execute(sql, params)
 
-	def getBars(self, instrument, frequency, timezone = None, fromDateTime = None, toDateTime = None):
-		instrument = normalize_instrument(instrument)
-		sql = "select bar.timestamp, bar.open, bar.high, bar.low, bar.close, bar.volume, bar.adj_close" \
-				" from bar join instrument on (bar.instrument_id = instrument.instrument_id)" \
-				" where instrument.name = ? and bar.frequency = ?"
-		args = [instrument, frequency]
+    def get_bars(self, symbol, frequency, timezone = None, from_date_time = None, to_date_time = None):
+        symbol = normalize_symbol(symbol)
+        sql = "select bar.timestamp, bar.open, bar.high, bar.low, bar.close, bar.volume, bar.adj_close" \
+                " from bar join symbol on (bar.symbol_id = symbol.symbol_id)" \
+                " where symbol.name = ? and bar.frequency = ?"
+        args = [symbol, frequency]
 
-		if fromDateTime != None:
-			sql += " and bar.timestamp >= ?"
-			args.append(dt.datetime_to_timestamp(fromDateTime))
-		if toDateTime != None:
-			sql += " and bar.timestamp <= ?"
-			args.append(dt.datetime_to_timestamp(toDateTime))
+        if from_date_time != None:
+            sql += " and bar.timestamp >= ?"
+            args.append(dt.datetime_to_timestamp(from_date_time))
+        if to_date_time != None:
+            sql += " and bar.timestamp <= ?"
+            args.append(dt.datetime_to_timestamp(to_date_time))
 
-		sql += " order by bar.timestamp asc"
-		cursor = self.__connection.cursor()
-		cursor.execute(sql, args)
-		ret = []
-		for row in cursor:
-			dateTime = dt.timestamp_to_datetime(row[0])
-			if timezone:
-				dateTime = dt.localize(dateTime, timezone)
-			ret.append(bar.Bar(dateTime, row[1], row[2], row[3], row[4], row[5], row[6]))
-		cursor.close()
-		return ret
+        sql += " order by bar.timestamp asc"
+        cursor = self.__connection.cursor()
+        cursor.execute(sql, args)
+        ret = []
+        for row in cursor:
+            date_time = dt.timestamp_to_datetime(row[0])
+            if timezone:
+                date_time = dt.localize(date_time, timezone)
+            ret.append(bar.Bar(date_time, row[1], row[2], row[3], row[4], row[5], row[6]))
+        cursor.close()
+        return ret
 
 class Feed(membf.Feed):
-	def __init__(self, dbFilePath, frequency):
-		membf.Feed.__init__(self, frequency)
-		self.__db = Database(dbFilePath)
+    def __init__(self, db_file_path, frequency):
+        membf.Feed.__init__(self, frequency)
+        self.__db = Database(db_file_path)
 
-	def getDatabase(self):
-		return self.__db
+    def get_database(self):
+        return self.__db
 
-	def loadBars(self, instrument, timezone = None, fromDateTime = None, toDateTime = None):
-		bars = self.__db.getBars(instrument, self.getFrequency(), timezone, fromDateTime, toDateTime)
-		self.addBarsFromSequence(instrument, bars)
+    def load_bars(self, symbol, timezone = None, from_date_time = None, to_date_time = None):
+        bars = self.__db.get_bars(symbol, self.get_frequency(), timezone, from_date_time, to_date_time)
+        self.add_bars_from_sequence(symbol, bars)
 
