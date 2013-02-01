@@ -28,6 +28,7 @@ import multiprocessing
 from pytradelab import optimizer
 from pytradelab import barfeed
 
+
 def call_function(function, *parameters):
     if len(parameters) > 0:
         return function(*parameters)
@@ -46,7 +47,7 @@ def call_and_retry_on_network_error(function, retry_count, *parameters):
     ret = call_function(function, *parameters)
     return ret
 
-class Worker:
+class Worker(object):
     def __init__(self, address, port):
         url = "http://%s:%s/PyTradeLabRPC" % (address, port)
         self.__server = xmlrpclib.ServerProxy(url, allow_none=True)
@@ -113,6 +114,7 @@ class Worker:
         while job != None:
             self.__process_job(job, barsFreq, symbols, bars)
             job = self.get_next_job()
+
 
 def worker_process(strategy_class, address, port):
     class MyWorker(Worker):

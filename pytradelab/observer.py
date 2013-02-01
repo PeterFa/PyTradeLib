@@ -18,7 +18,7 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-class Event:
+class Event(object):
     def __init__(self):
         self.__handlers = []
         self.__to_subscribe = []

@@ -191,4 +191,3 @@ class BarDataSeries(SequenceDataSeries):
     def get_adj_close_data_series(self):
         """Returns a :class:`DataSeries` with the adjusted close prices."""
         return BarValueDataSeries(self, bar.Bar.get_adj_close)
-

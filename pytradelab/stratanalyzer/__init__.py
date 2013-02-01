@@ -18,7 +18,8 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-class StrategyAnalyzer:
+
+class StrategyAnalyzer(object):
     """Base class for strategy analyzers.
 
     .. note::

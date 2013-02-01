@@ -22,6 +22,7 @@ import datetime
 import calendar
 import pytz
 
+
 def datetime_is_naive(date_time):
     """ Returns True if date_time is naive."""
     return date_time.tzinfo is None or date_time.tzinfo.utcoffset(date_time) is None
@@ -32,7 +33,6 @@ def localize(date_time, timeZone):
     * If date_time is a naive datetime (datetime with no timezone information), timezone information is added but date and time remains the same.
     * If date_time is not a naive datetime, a datetime object with new tzinfo attribute is returned, adjusting the date and time data so the result is the same UTC time.
     """
-
     if datetime_is_naive(date_time):
         ret = timeZone.localize(date_time)
     else:

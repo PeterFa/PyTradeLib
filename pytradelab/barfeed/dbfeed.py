@@ -18,7 +18,8 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-class Database:
+
+class Database(object):
     def add_bars(self, bars, frequency):
         for symbol in bars.get_symbols():
             bar = bars.get_bar(symbol)

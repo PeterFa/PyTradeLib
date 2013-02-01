@@ -76,7 +76,7 @@ def _filter_datetimes(date_times, from_date = None, toDate = None):
     return filter(lambda x: date_timeFilter.includeDateTime(x), date_times)
 
 
-class Series:
+class Series(object):
     def __init__(self):
         self.__values = {}
 
@@ -179,7 +179,7 @@ class InstrumentMarker(Series):
             Series.plot(self, mplSubplot, date_times, color)
 
 
-class Subplot:
+class Subplot(object):
     """ """
     colors = ['b', 'c', 'm', 'y', 'k']
 
@@ -266,7 +266,7 @@ class InstrumentSubplot(Subplot):
                 self.getSeries("Sell", SellMarker).addValue(execInfo.get_date_time(), execInfo.get_price())
 
 
-class StrategyPlotter:
+class StrategyPlotter(object):
     """Class responsible for plotting a strategy execution.
 
     :param strat: The strategy to plot.

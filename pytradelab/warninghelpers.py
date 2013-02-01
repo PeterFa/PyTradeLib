@@ -28,4 +28,3 @@ warnings.simplefilter("default", PyTradeLabDeprecationWarning)
 # Deprecation warnings are disabled by default in Python 2.7, so this helper function enables them back.
 def deprecation_warning(msg, stacklevel=0):
     warnings.warn(msg, category=PyTradeLabDeprecationWarning, stacklevel=stacklevel+1)
-

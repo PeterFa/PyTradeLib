@@ -21,6 +21,7 @@
 from pytradelab import barfeed
 from pytradelab.barfeed import helpers
 
+
 # This class is responsible for:
 # - Holding bars in memory.
 # - Aligning them with respect to time.
@@ -101,4 +102,3 @@ class Feed(barfeed.BarFeed):
 
     def get_bars_left(self):
         return self.__bars_left
-

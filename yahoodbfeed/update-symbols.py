@@ -28,6 +28,7 @@ import pytradelab.logger
 
 logger = pytradelab.logger.get_logger("update-symbols")
 
+
 def get_symbols_filename(market):
     market = market.lower()
     return "%s-symbols.txt" % (market)
@@ -74,5 +75,5 @@ def main():
     build_symbols_file("nasdaq")
     build_symbols_file("nyse")
 
-main()
-
+if __name__ == '__main__':
+    main()

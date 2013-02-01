@@ -37,7 +37,7 @@ class AutoStopThread(threading.Thread):
         self.__server.stop()
 
 
-class Results:
+class Results(object):
     """The results of the strategy executions."""
     def __init__(self, parameters, result):
         self.__parameters = parameters
@@ -52,7 +52,7 @@ class Results:
         return self.__result
 
 
-class Job:
+class Job(object):
     def __init__(self, strategy_parameters):
         self.__strategy_parameters = strategy_parameters
         self.__best_result = None
@@ -234,6 +234,7 @@ class Server(SimpleXMLRPCServer.SimpleXMLRPCServer):
             self.__forced_stop = True
         return ret
 
+
 def serve(bar_feed, strategy_parameters, address, port):
     """Executes a server that will provide bars and strategy parameters for workers to use.
 
@@ -248,4 +249,3 @@ def serve(bar_feed, strategy_parameters, address, port):
     """
     s = Server(address, port)
     return s.serve(bar_feed, strategy_parameters)
-

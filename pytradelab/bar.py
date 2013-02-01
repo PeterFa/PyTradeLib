@@ -18,7 +18,7 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-class Bar:
+class Bar(object):
     """A symbol's prices at a given time.
 
     :param date_time: The date time.
@@ -107,7 +107,7 @@ class Bar:
     def set_bars_until_session_close(self, bars_until_session_close):
         self.__bars_until_session_close = bars_until_session_close
 
-class Bars:
+class Bars(object):
     """A group of :class:`Bar` objects.
 
     :param bar_dict: A map of symbol to :class:`Bar` objects.
@@ -154,4 +154,3 @@ class Bars:
     def get_bar(self, symbol):
         """Returns the :class:`pytradelab.bar.Bar` for the given symbol or None if the symbol is not found."""
         return self.__bar_dict.get(symbol, None)
-

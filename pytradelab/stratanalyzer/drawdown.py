@@ -20,7 +20,8 @@
 
 from pytradelab import stratanalyzer
 
-class DrawDownHelper:
+
+class DrawDownHelper(object):
     def __init__(self, initial_value):
         self.__high_water_mark = initial_value
         self.__low_water_mark = initial_value
@@ -50,6 +51,7 @@ class DrawDownHelper:
                 self.__duration = 0
             else:
                 self.__duration = 1
+
 
 class DrawDown(stratanalyzer.StrategyAnalyzer):
     """A :class:`pytradelab.stratanalyzer.StrategyAnalyzer` that calculates

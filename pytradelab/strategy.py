@@ -24,7 +24,7 @@ import observer
 from stratanalyzer import returns
 import warninghelpers
 
-class Position:
+class Position(object):
     """Base class for positions.
 
     :param strategy: The strategy that this position belongs to.
@@ -37,7 +37,6 @@ class Position:
     .. note::
         This is a base class and should not be used directly.
     """
-
     def __init__(self, strategy, entry_order, good_until_canceled):
         self.__strategy = strategy
         self.__entry_order = entry_order
@@ -273,7 +272,7 @@ class ShortPosition(Position):
     def is_long(self):
         return False
 
-class Strategy:
+class Strategy(object):
     """Base class for strategies.
 
     :param bar_feed: The bar feed to use to backtest the strategy.
@@ -688,4 +687,3 @@ class Strategy:
             self.__feed.stop()
             self.__broker.join()
             self.__feed.join()
-

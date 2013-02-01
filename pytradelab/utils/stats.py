@@ -21,6 +21,7 @@
 from pytradelab import execcontext
 import math
 
+
 def py_mean(values):
     ret = None
     if len(values):

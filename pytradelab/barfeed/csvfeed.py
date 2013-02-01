@@ -29,8 +29,9 @@ import datetime
 import types
 import pytz
 
+
 # Interface for csv row parsers.
-class RowParser:
+class RowParser(object):
     def parse_bar(self, csv_row_dict):
         raise Exception("Not implemented")
 
@@ -40,10 +41,12 @@ class RowParser:
     def get_delimiter(self):
         raise Exception("Not implemented")
 
+
 # Interface for bar filters.
-class BarFilter:
+class BarFilter(object):
     def include_bar(self, bar_):
         raise Exception("Not implemented")
+
 
 class DateRangeFilter(BarFilter):
     def __init__(self, from_date=None, to_date=None):
@@ -56,6 +59,7 @@ class DateRangeFilter(BarFilter):
         if self.__from_date and bar_.get_date_time() < self.__from_date:
             return False
         return True
+
 
 # US Equities Regular Trading Hours filter
 # Monday ~ Friday
@@ -84,6 +88,7 @@ class USEquitiesRTH(DateRangeFilter):
             if barTime > self.__to_time:
                 return False
         return ret
+
 
 class BarFeed(membf.Feed):
     """A CSV file based :class:`pytradelab.barfeed.BarFeed`.
@@ -126,6 +131,7 @@ class BarFeed(membf.Feed):
 
         self.add_bars_from_sequence(symbol, loaded_bars)
 
+
 ######################################################################
 ## Yahoo CSV parser
 # Each bar must be on its own line and fields must be separated by comma (,).
@@ -166,6 +172,7 @@ class YahooRowParser(RowParser):
         volume = float(csv_row_dict["Volume"])
         adj_close = float(csv_row_dict["Adj Close"])
         return bar.Bar(date_time, open_, high, low, close, volume, adj_close)
+
 
 class YahooFeed(BarFeed):
     def __init__(self, timezone=None, skip_warning=False):

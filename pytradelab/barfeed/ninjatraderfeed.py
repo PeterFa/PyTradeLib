@@ -28,6 +28,7 @@ import pytz
 import types
 import datetime
 
+
 ######################################################################
 ## NinjaTrader CSV parser
 # Each bar must be on its own line and fields must be separated by semicolon (;).
@@ -40,8 +41,7 @@ import datetime
 #
 # The exported data will be in the UTC time zone.
 
-
-class Frequency:
+class Frequency(object):
     MINUTE = pytradelab.barfeed.Frequency.MINUTE
     DAILY = pytradelab.barfeed.Frequency.DAY
 

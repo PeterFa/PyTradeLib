@@ -22,6 +22,7 @@ from pytradelab.barfeed import csvfeed
 
 import types
 
+
 ######################################################################
 ## Yahoo Finance CSV parser
 # Each bar must be on its own line and fields must be separated by comma (,).
@@ -33,6 +34,7 @@ import types
 
 class RowParser(csvfeed.YahooRowParser):
     pass
+
 
 class Feed(csvfeed.YahooFeed):
     """A :class:`pytradelab.barfeed.csvfeed.BarFeed` that loads bars from CSV files downloaded from Yahoo! Finance.

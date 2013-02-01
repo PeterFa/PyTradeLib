@@ -22,7 +22,7 @@ import pytz
 
 # http://en.wikipedia.org/wiki/List_of_market_opening_times
 
-class MarketSession:
+class MarketSession(object):
     """Base class for market sessions.
 
     .. note::
@@ -65,4 +65,3 @@ class FTSE(MarketSession):
 class TSE(MarketSession):
     """Tokyo Stock Exchange market session."""
     timezone = pytz.timezone("Asia/Tokyo")
-

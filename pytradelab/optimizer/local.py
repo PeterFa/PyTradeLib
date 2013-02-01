@@ -27,6 +27,7 @@ from pytradelab import optimizer
 from pytradelab.optimizer import server
 from pytradelab.optimizer import worker
 
+
 def server_thread(srv, bar_feed, strategy_parameters, port):
     srv.serve(bar_feed, strategy_parameters)
 

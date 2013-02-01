@@ -57,4 +57,3 @@ def get_logger(name):
             ret = __build_logger(name)
             loggers[name] = ret
     return ret
-

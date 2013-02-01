@@ -31,6 +31,7 @@ import tempfile
 
 logger = pytradelab.logger.get_logger("update-db")
 
+
 def download_bars(db, symbol, year, timezone):
     try:
         # Download bars.
@@ -61,5 +62,5 @@ def main():
     update_bars("yahoofinance.sqlite", "nasdaq-symbols.txt", marketsession.NASDAQ.timezone, from_year, to_year)
     update_bars("yahoofinance.sqlite", "nyse-symbols.txt", marketsession.NYSE.timezone, from_year, to_year)
 
-main()
-
+if __name__ == '__main__':
+    main()

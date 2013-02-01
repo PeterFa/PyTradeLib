@@ -25,10 +25,11 @@ import copy
 
 logger = pytradelab.logger.get_logger("broker.backtesting")
 
+
 ######################################################################
 ## Commissions
 
-class Commission:
+class Commission(object):
     def calculate(self, order, price, quantity):
         raise NotImplementedError()
 
@@ -43,10 +44,11 @@ class FixedCommission(Commission):
     def calculate(self, order, price, quantity):
         return self.__cost
 
+
 ######################################################################
 ## Order filling strategies
 
-class FillStrategy:
+class FillStrategy(object):
     """Base class for order filling strategies."""
 
     # Return the fill price for a MarketOrder or None.
@@ -217,10 +219,11 @@ class DefaultStrategy(FillStrategy):
                 assert(False)
         return ret
 
+
 ######################################################################
 ## Orders
 
-class BacktestingOrder:
+class BacktestingOrder(object):
     def __init__(self):
         pass
 
@@ -311,6 +314,7 @@ class StopLimitOrder(broker.StopLimitOrder, BacktestingOrder):
             price = broker_.get_fill_strategy().fill_stop_limit_order(self, broker_, bar_, just_hit_stop_price)
             if price != None:
                 broker_.commit_order_execution(self, price, self.get_quantity(), bar_.get_date_time())
+
 
 ######################################################################
 ## Broker

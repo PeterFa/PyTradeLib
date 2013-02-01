@@ -26,7 +26,7 @@ from pytradelab import observer
 ## http://www.interactivebrokers.com/en/software/tws/usersguidebook/ordertypes/basic_order_types.htm
 
 
-class Order:
+class Order(object):
     """Base class for orders.
 
     :param type_: The order type
@@ -48,7 +48,6 @@ class Order:
 
         This is a base class and should not be used directly.
     """
-
     class Action:
         BUY	= 1
         BUY_TO_COVER = 2
@@ -267,7 +266,7 @@ class StopLimitOrder(Order):
         return self.__limit_order_active
 
 
-class OrderExecutionInfo:
+class OrderExecutionInfo(object):
     """Execution information for a filled order."""
     def __init__(self, price, quantity, commission, date_time):
         self.__price = price
@@ -294,7 +293,7 @@ class OrderExecutionInfo:
 
 ######################################################################
 ## Base broker class
-class Broker:
+class Broker(object):
     """Base class for brokers.
 
     .. note::

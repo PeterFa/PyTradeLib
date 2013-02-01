@@ -20,6 +20,7 @@
 
 import urllib
 
+
 def __adjust_month(month):
     if month > 12 or month < 1:
         raise Exception("Invalid month")
@@ -56,4 +57,3 @@ def get_daily_csv(symbol, year):
     from_month = 1
     to_month = 12
     return __download_symbol_prices(symbol, from_month, year, to_month, year)
-

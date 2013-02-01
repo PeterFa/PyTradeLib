@@ -26,8 +26,10 @@ from pytradelab.utils import dt
 import sqlite3
 import os
 
+
 def normalize_symbol(symbol):
     return symbol.upper()
+
 
 # SQLite DB.
 # Timestamps are stored in UTC.
@@ -130,6 +132,7 @@ class Database(dbfeed.Database):
         cursor.close()
         return ret
 
+
 class Feed(membf.Feed):
     def __init__(self, db_file_path, frequency):
         membf.Feed.__init__(self, frequency)
@@ -141,4 +144,3 @@ class Feed(membf.Feed):
     def load_bars(self, symbol, timezone = None, from_date_time = None, to_date_time = None):
         bars = self.__db.get_bars(symbol, self.get_frequency(), timezone, from_date_time, to_date_time)
         self.add_bars_from_sequence(symbol, bars)
-

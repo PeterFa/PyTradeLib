@@ -23,7 +23,7 @@ from pytradelab import observer
 from pytradelab import bar
 from pytradelab import warninghelpers
 
-class Frequency:
+class Frequency(object):
     # SECOND	= 1
     MINUTE	= 2
     # HOUR	= 3
@@ -38,7 +38,7 @@ class Frequency:
 #
 # THIS IS A VERY BASIC CLASS AND IN WON'T DO ANY VERIFICATIONS OVER THE BARS RETURNED.
 
-class BasicBarFeed:
+class BasicBarFeed(object):
     def __init__(self, frequency):
         self.__ds = {}
         self.__default_symbol = None
