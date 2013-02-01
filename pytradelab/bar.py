@@ -50,13 +50,6 @@ class Bar(object):
     """
 
     def __init__(self, date_time, open_, high, low, close, volume, adj_close):
-        assert(high >= open_)
-        assert(high >= low)
-        assert(high >= close)
-        assert(low <= open_)
-        assert(low <= high)
-        assert(low <= close)
-
         self.__date_time = date_time
         self.__open = open_
         self.__close = close
@@ -66,6 +59,22 @@ class Bar(object):
         self.__adj_close = adj_close
         self.__session_close = False
         self.__bars_until_session_close = None
+
+        def bar_assert(comparison, msg):
+            try:
+                assert(comparison)
+            except AssertionError:
+                errors.append(' '.join([msg, '(%s)' % self.__str__()]))
+
+        errors = []
+        bar_assert(high >= open_, '(H)igh !>= (O)pen.')
+        bar_assert(high >= low, '(H)igh !>= (L)ow.')
+        bar_assert(high >= close, '(H)igh !>= (C)lose.')
+        bar_assert(low <= open_, '(L)ow !<= (O)open.')
+        bar_assert(low <= high, '(L)ow !<= (H)igh.')
+        bar_assert(low <= close, '(L)ow !<= (C)lose.')
+        if errors:
+            raise AssertionError('\n'.join(errors))
 
     def get_date_time(self):
         """Returns the :class:`datetime.datetime`."""
@@ -118,6 +127,39 @@ class Bar(object):
 
     def set_bars_until_session_close(self, bars_until_session_close):
         self.__bars_until_session_close = bars_until_session_close
+
+    def __eq__(self, other):
+        if not isinstance(other, Bar):
+            return False
+        if self.get_date_time() != other.get_date_time():
+            return False
+        if self.get_open() != other.get_open():
+            return False
+        if self.get_high() != other.get_high():
+            return False
+        if self.get_low() != other.get_low():
+            return False
+        if self.get_close() != other.get_close():
+            return False
+        if self.get_volume() != other.get_volume():
+            return False
+        if self.get_adj_close() != other.get_adj_close():
+            return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        return 'DT: %s, O: %s, H: %s, L: %s, C: %s, V: %s' % (
+            self.get_date_time().strftime('%Y.%m.%d %H:%M'),
+            '%.2f' % self.get_open(),
+            '%.2f' % self.get_high(),
+            '%.2f' % self.get_low(),
+            '%.2f' % self.get_close(),
+            '%i' % self.get_volume()
+            )
+
 
 class Bars(object):
     """A group of :class:`Bar` objects.
