@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from distutils.core import setup
 
 setup(
@@ -11,6 +9,17 @@ setup(
     author_email='briancappello@gmail.com',
     url='',
     download_url='',
+    classifiers = [
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+        "Operating System :: Unix",
+        "Operating System :: POSIX",
+        "Operating System :: MacOS :: MacOS X",
+        "Programming Language :: Python",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Financial and Insurance Industry",
+        ],
     packages=[
         'pytradelab',
         'pytradelab.barfeed',
