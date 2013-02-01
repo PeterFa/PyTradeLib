@@ -24,7 +24,7 @@ sys.path.append("..")
 from pytradelab.barfeed import sqlitefeed
 from pytradelab.barfeed import yahoofeed
 from pytradelab import marketsession
-from pytradelab.tools import yahoofinance
+from pytradelab.deprecated import yahoofinance
 import pytradelab.logger
 
 import tempfile

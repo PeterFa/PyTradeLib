@@ -63,25 +63,25 @@ def compare_tail(fileName, lines):
 
 class TutorialTestCase(unittest.TestCase):
     def testTutorial1(self):
-        run_python_code("from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
+        run_python_code("from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
         lines = run_sample_script("tutorial-1.py").split("\n")
         self.assertTrue(compare_head("tutorial-1.output", lines[:3]))
         self.assertTrue(compare_tail("tutorial-1.output", lines[-4:-1]))
 
     def testTutorial2(self):
-        # run_python_code("from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
+        # run_python_code("from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
         lines = run_sample_script("tutorial-2.py").split("\n")
         self.assertTrue(compare_head("tutorial-2.output", lines[:15]))
         self.assertTrue(compare_tail("tutorial-2.output", lines[-4:-1]))
 
     def testTutorial3(self):
-        # run_python_code("from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
+        # run_python_code("from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
         lines = run_sample_script("tutorial-3.py").split("\n")
         self.assertTrue(compare_head("tutorial-3.output", lines[:30]))
         self.assertTrue(compare_tail("tutorial-3.output", lines[-4:-1]))
 
     def testTutorial4(self):
-        # run_python_code("from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
+        # run_python_code("from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)", "orcl-2000.csv")
         lines = run_sample_script("tutorial-4.py").split("\n")
         self.assertTrue(compare_head("tutorial-4.output", lines[:-1]))
 

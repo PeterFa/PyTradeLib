@@ -35,7 +35,7 @@ Optimizer
 Having said all that, the first thing that we'll need to test our strategy is some data.
 Let's use Oracle's stock prices for year 2000, which we'll download with the following command: ::
 
-    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)"
+    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)"
 
 The output should look like this: ::
 
@@ -51,7 +51,7 @@ The output should look like this: ::
 The pytradelab.tools.yahoofinance package downloads CSV formatted data from Yahoo! Finance. 
 Let's save that as orcl-2000.csv with the following command: ::
 
-    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)" > orcl-2000.csv
+    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)" > orcl-2000.csv
 
 Let's start with a simple strategy, that is, one that just prints closing prices as they are processed:
 
@@ -155,9 +155,9 @@ Long story short, **we need to go parallel**.
 
 Let's start by downloading 3 years of daily bars for 'Dow Jones Industrial Average': ::
 
-    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2009)" > dia-2009.csv
-    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2010)" > dia-2010.csv
-    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2011)" > dia-2011.csv
+    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2009)" > dia-2009.csv
+    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2010)" > dia-2010.csv
+    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2011)" > dia-2011.csv
 
 This is the server script:
 

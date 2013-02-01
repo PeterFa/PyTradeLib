@@ -66,3 +66,11 @@ else:
         if len(values):
             ret =  numpy.array(values).std(ddof=ddof)
         return ret
+
+def get_change_percentage(actual, prev):
+    if actual is None or prev is None or prev == 0:
+        raise Exception("Invalid values")
+
+    diff = actual-prev
+    ret = diff/float(abs(prev))
+    return ret
