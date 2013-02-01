@@ -59,7 +59,7 @@ class SQLiteFeedTestCase(unittest.TestCase):
 
             # Fill the database using the bars from the Yahoo! feed.
             sqliteFeed = tmpFeed.get_feed()
-            sqliteFeed.get_database().add_barsFromFeed(yahooFeed)
+            sqliteFeed.get_database().add_bars_from_feed(yahooFeed)
 
             # Load the SQLite feed and process all bars.
             sqliteFeed.load_bars("orcl")

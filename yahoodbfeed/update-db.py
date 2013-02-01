@@ -44,7 +44,7 @@ def download_bars(db, symbol, year, timezone):
         feed.add_bars_from_csv(symbol, csvFile.name, timezone)
 
         # Put them in the db.
-        db.add_barsFromFeed(feed)
+        db.add_bars_from_feed(feed)
     except Exception, e:
         logger.error("Error downloading %s bars for %s: %s" % (symbol, year, str(e)))
 

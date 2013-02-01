@@ -25,7 +25,7 @@ class Database(object):
             bar = bars.get_bar(symbol)
             self.add_bar(symbol, bar, frequency)
 
-    def add_barsFromFeed(self, feed):
+    def add_bars_from_feed(self, feed):
         feed.start()
         try:
             for bars in feed:
