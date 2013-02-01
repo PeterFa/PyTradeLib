@@ -20,28 +20,27 @@
 
 import bar
 
-# It is important to inherit object to get __getitem__ to work properly.
-# Check http://code.activestate.com/lists/python-list/621258/
+
 class DataSeries(object):
-    """Base class for data series. A data series is an abstraction used to manage historical data.
+    """Base class for data series. A data series is an abstraction used to
+    manage historical data.
 
         .. note::
             This is a base class and should not be used directly.
     """
-
     def __len__(self):
         """Returns the number of elements in the data series."""
         return self.get_length()
 
     def __getitem__(self, key):
-        """Returns the value at a given position/slice. It raises IndexError if the position is invalid,
-        or TypeError if the key type is invalid."""
+        """Returns the value at a given position/slice. It raises IndexError if
+        the position is invalid, or TypeError if the key type is invalid."""
         if isinstance(key, slice):
-            return [self[i] for i in xrange(*key.indices(self.get_length()))]
+            return [self[i] for i in xrange(*key.indices(len(self)))]
         elif isinstance(key, int) :
             if key < 0:
-                key += self.get_length()
-            if key >= self.get_length() or key < 0:
+                key += len(self)
+            if key >= len(self) or key < 0:
                 raise IndexError("Index out of range")
             return self.get_value_absolute(key)
         else:
@@ -56,8 +55,8 @@ class DataSeries(object):
     def get_value_absolute(self, pos):
         raise Exception("Not implemented")
 
-    # Returns a sequence of absolute values [first_idx, last_idx].
-    # if include_none is False and at least one value is None, then None is returned.
+    # Returns a sequence of absolute values [first_idx, last_idx]. If
+    # include_none is False and *any* value is None, then None is returned.
     # TODO: Deprecate this.
     def get_values_absolute(self, first_idx, last_idx, include_none=False):
         ret = []
@@ -72,7 +71,7 @@ class DataSeries(object):
         if values_ago < 0:
             return None
 
-        ret = self.get_length() - values_ago - 1
+        ret = len(self) - values_ago - 1
         if ret < self.get_first_valid_index():
             ret = None
         return ret
@@ -101,14 +100,18 @@ class DataSeries(object):
             ret = self.get_value_absolute(absolute_idx)
         return ret
 
+
 class SequenceDataSeries(DataSeries):
     """A sequence based :class:`DataSeries`.
 
-    :param values: The values that this DataSeries will hold. If its None, an empty list is used. **Note that the list is not cloned and it takes ownership of it**.
+    :param values: The values that this DataSeries will hold. If values is None,
+    an empty list is used. **Note that the list is not copied and the DataSeries
+    takes ownership of it**.
+
     :type values: list.
     """
-
     def __init__(self, values=None):
+        self.__idx = 0
         if values != None:
             self.__values = values
         else:
@@ -119,6 +122,20 @@ class SequenceDataSeries(DataSeries):
 
     def __getitem__(self, key):
         return self.__values[key]
+
+    def next(self):
+        if self.__idx >= len(self.__values):
+            self._reset_()
+            raise StopIteration()
+        ret = self.__values[self.__idx]
+        self.__idx += 1
+        return ret
+
+    def __iter__(self):
+        return self
+
+    def _reset_(self):
+        self.__idx = 0
 
     def get_first_valid_index(self):
         return 0
@@ -133,8 +150,8 @@ class SequenceDataSeries(DataSeries):
         return ret
 
     def append_value(self, value):
-        """Appends a value."""
         self.__values.append(value)
+
 
 class BarValueDataSeries(DataSeries):
     def __init__(self, bar_ds, get_value_wrapper_func):
@@ -155,7 +172,6 @@ class BarValueDataSeries(DataSeries):
 
 class BarDataSeries(SequenceDataSeries):
     """A :class:`DataSeries` of :class:`pytradelab.bar.Bar` instances."""
-
     def __init__(self):
         SequenceDataSeries.__init__(self)
         self.__last_date_time = None
@@ -163,8 +179,9 @@ class BarDataSeries(SequenceDataSeries):
     def append_value(self, value):
         # Check that bars are appended in order.
         assert(value != None)
-        if self.__last_date_time != None and value.get_date_time() <= self.__last_date_time:
-            raise Exception("Invalid bar datetime. It must be bigger than that last one")
+        if self.__last_date_time != None \
+          and value.get_date_time() <= self.__last_date_time:
+            raise Exception("Appended datetime must be more recent than the previous ones.")
         self.__last_date_time = value.get_date_time()
         SequenceDataSeries.append_value(self, value)
 
