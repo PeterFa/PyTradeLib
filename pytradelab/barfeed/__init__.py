@@ -23,12 +23,6 @@ from pytradelab import observer
 from pytradelab import bar
 from pytradelab import warninghelpers
 
-class Frequency(object):
-    # SECOND	= 1
-    MINUTE	= 2
-    # HOUR	= 3
-    DAY		= 4
-
 # This class is responsible for:
 # - Managing and upating BarDataSeries instances.
 # - Event dispatching
@@ -150,7 +144,7 @@ class BarFeed(BasicBarFeed):
     """Base class for :class:`pytradelab.bar.Bars` providing feeds.
 
     :param frequency: The bars frequency.
-    :type frequency: barfeed.Frequency.MINUTE or barfeed.Frequency.DAY.
+    :type frequency: bar.Frequency.MINUTE or bar.Frequency.DAY.
 
     .. note::
         This is a base class and should not be used directly.

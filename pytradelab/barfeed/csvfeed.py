@@ -182,7 +182,7 @@ class YahooFeed(BarFeed):
         if not skip_warning:
             warninghelpers.deprecation_warning("pytradelab.barfeed.csvfeed.YahooFeed will be deprecated in the next version. Please use pytradelab.barfeed.yahoofeed.Feed instead.", stacklevel=2)
 
-        BarFeed.__init__(self, barfeed.Frequency.DAY)
+        BarFeed.__init__(self, bar.Frequency.DAY)
         self.__timezone = timezone
     
     def add_bars_from_csv(self, symbol, path, timezone = None):

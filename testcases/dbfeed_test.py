@@ -23,6 +23,7 @@ import os
 
 from pytradelab.barfeed import yahoofeed
 from pytradelab.barfeed import sqlitefeed
+from pytradelab import bar
 from pytradelab import barfeed
 from pytradelab import marketsession
 import common
@@ -50,7 +51,7 @@ class SQLiteFeedTestCase(unittest.TestCase):
     dbName = "SQLiteFeedTestCase.sqlite"
 
     def testLoadDailyBars(self):
-        tmpFeed = TemporarySQLiteFeed(SQLiteFeedTestCase.dbName, barfeed.Frequency.DAY)
+        tmpFeed = TemporarySQLiteFeed(SQLiteFeedTestCase.dbName, bar.Frequency.DAY)
         with tmpFeed:
             # Load bars using a Yahoo! feed.
             yahooFeed = yahoofeed.Feed()

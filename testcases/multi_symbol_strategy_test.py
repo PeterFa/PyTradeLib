@@ -20,6 +20,7 @@
 
 import unittest
 
+from pytradelab import bar
 from pytradelab import barfeed
 from pytradelab.barfeed import yahoofeed
 from pytradelab.barfeed import sqlitefeed
@@ -86,13 +87,13 @@ class TestCase(unittest.TestCase):
         self.__testDifferentTimezonesImpl(feed)
 
     def testDifferentTimezones_DBFeed(self):
-        feed = sqlitefeed.Feed(common.get_data_file_path("multisymbol.sqlite"), barfeed.Frequency.DAY)
+        feed = sqlitefeed.Feed(common.get_data_file_path("multisymbol.sqlite"), bar.Frequency.DAY)
         feed.load_bars("^n225")
         feed.load_bars("spy")
         self.__testDifferentTimezonesImpl(feed)
 
     def testDifferentTimezones_DBFeed_LocalizedBars(self):
-        feed = sqlitefeed.Feed(common.get_data_file_path("multisymbol.sqlite"), barfeed.Frequency.DAY)
+        feed = sqlitefeed.Feed(common.get_data_file_path("multisymbol.sqlite"), bar.Frequency.DAY)
         feed.load_bars("^n225", marketsession.TSE.getTimezone())
         feed.load_bars("spy", marketsession.USEquities.getTimezone())
         self.__testDifferentTimezonesImpl(feed)

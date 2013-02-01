@@ -41,11 +41,6 @@ import datetime
 #
 # The exported data will be in the UTC time zone.
 
-class Frequency(object):
-    MINUTE = pytradelab.barfeed.Frequency.MINUTE
-    DAILY = pytradelab.barfeed.Frequency.DAY
-
-
 class RowParser(csvfeed.RowParser):
     def __init__(self, frequency, daily_bar_time, timezone=None):
         self.__frequency = frequency
@@ -54,9 +49,9 @@ class RowParser(csvfeed.RowParser):
 
     def __parse_date_time(self, date_time):
         ret = None
-        if self.__frequency == pytradelab.barfeed.Frequency.MINUTE:
+        if self.__frequency == bar.Frequency.MINUTE:
             ret = datetime.datetime.strptime(date_time, "%Y%m%d %H%M%S")
-        elif self.__frequency == pytradelab.barfeed.Frequency.DAY:
+        elif self.__frequency == bar.Frequency.DAY:
             ret = datetime.datetime.strptime(date_time, "%Y%m%d")
             # Time on CSV files is empty. If told to set one, do it.
             if self.__daily_bar_time != None:
@@ -99,8 +94,8 @@ class Feed(csvfeed.BarFeed):
 
         Valid **frequency** parameter values are:
 
-        * pytradelab.barfeed.Frequency.MINUTE
-        * pytradelab.barfeed.Frequency.DAY
+        * bar.Frequency.MINUTE
+        * bar.Frequency.DAY
     """
 
     def __init__(self, frequency, timezone=None):

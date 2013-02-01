@@ -179,7 +179,7 @@ class AnalyzerTestCase(unittest.TestCase):
         self.__testIGE_BrokerImpl(2)
 
     def __testManualImpl(self, closingPrices, cash):
-        bar_feed = membf.Feed(barfeed.Frequency.DAY)
+        bar_feed = membf.Feed(bar.Frequency.DAY)
         bars = build_bars_from_closing_prices(closingPrices)
         bar_feed.add_bars_from_sequence("orcl", bars)
 

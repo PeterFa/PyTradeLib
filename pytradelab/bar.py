@@ -18,6 +18,18 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
+class Frequency:
+    MINUTE = 1
+    FIVE = 5
+    TEN = 10
+    FIFTEEN = 15
+    THIRTY = 30
+    HOUR = 60
+    DAY = 'd'
+    WEEK = 'w'
+    MONTH = 'm'
+
+
 class Bar(object):
     """A symbol's prices at a given time.
 
