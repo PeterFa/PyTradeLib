@@ -76,7 +76,7 @@
 					<key>AddCopyrightMailTo</key>
 					<false/>
 					<key>BaseURL</key>
-					<string>http://gbeced.github.com/pyalgotrade/</string>
+					<string>http://gbeced.github.com/pytradelab/</string>
 					<key>ConsolidateCommonFilesMode</key>
 					<integer>0</integer>
 					<key>ContactText</key>
@@ -88,7 +88,7 @@
 					<key>CruftlessLinksEnabled</key>
 					<true/>
 					<key>DefaultExportPath</key>
-					<string>/Users/gabo/Devel-new/pyalgotrade-gh-pages</string>
+					<string>/Users/gabo/Devel-new/pytradelab-gh-pages</string>
 					<key>DirectoryIndexFilenames</key>
 					<array>
 						<string>index.htm</string>

@@ -2,13 +2,13 @@ import csv
 import datetime
 import os
 
-from pyalgotrade.barfeed import yahoofeed
-from pyalgotrade.barfeed import csvfeed
-from pyalgotrade import strategy
-from pyalgotrade import broker
-from pyalgotrade.utils import stats
-from pyalgotrade.stratanalyzer import returns
-from pyalgotrade.stratanalyzer import sharpe
+from pytradelab.barfeed import yahoofeed
+from pytradelab.barfeed import csvfeed
+from pytradelab import strategy
+from pytradelab import broker
+from pytradelab.utils import stats
+from pytradelab.stratanalyzer import returns
+from pytradelab.stratanalyzer import sharpe
 
 class OrdersFile:
     def __init__(self, ordersFile):

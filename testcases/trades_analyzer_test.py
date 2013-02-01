@@ -1,13 +1,13 @@
-# PyAlgoTrade
-# 
+# This file was originally part of PyAlgoTrade.
+#
 # Copyright 2012 Gabriel Martin Becedillas Ruiz
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,11 +18,11 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pyalgotrade.barfeed import ninjatraderfeed
-from pyalgotrade.barfeed import csvfeed
-from pyalgotrade.stratanalyzer import trades
-from pyalgotrade import broker
-from pyalgotrade.broker import backtesting
+from pytradelab.barfeed import ninjatraderfeed
+from pytradelab.barfeed import csvfeed
+from pytradelab.stratanalyzer import trades
+from pytradelab import broker
+from pytradelab.broker import backtesting
 
 import strategy_test
 import common

@@ -1,6 +1,6 @@
 import itertools
-from pyalgotrade.barfeed import yahoofeed
-from pyalgotrade.optimizer import server
+from pytradelab.barfeed import yahoofeed
+from pytradelab.optimizer import server
 
 def parameters_generator():
     entrySMA = range(150, 251)

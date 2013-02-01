@@ -1,15 +1,15 @@
 optimizer -- Parallel optimizers
 ================================
 
-.. automodule:: pyalgotrade.optimizer.server
+.. automodule:: pytradelab.optimizer.server
     :members:
     :member-order: bysource
 
-.. automodule:: pyalgotrade.optimizer.worker
+.. automodule:: pytradelab.optimizer.worker
     :members:
     :member-order: bysource
 
-.. automodule:: pyalgotrade.optimizer.local
+.. automodule:: pytradelab.optimizer.local
     :members:
     :member-order: bysource
 

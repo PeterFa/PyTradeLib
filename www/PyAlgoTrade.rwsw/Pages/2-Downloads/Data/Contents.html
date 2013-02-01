@@ -1,11 +1,11 @@
 <h2>Current version: 0.10 (11/Jan/2013)</h2>
-Download here: <a href="http://sourceforge.net/projects/pyalgotrade/files/0.10/PyAlgoTrade-0.10.tar.gz/download">PyAlgoTrade-0.10.tar.gz</a>
+Download here: <a href="http://sourceforge.net/projects/pytradelab/files/0.10/PyAlgoTrade-0.10.tar.gz/download">PyAlgoTrade-0.10.tar.gz</a>
 <ul>
-  <li>Sharpe Ratio analysis (pyalgotrade.stratanalyzer.sharpe.SharpeRatio).</li>
-  <li>Max. drawdown and max. drawdown duration analysis (pyalgotrade.stratanalyzer.drawdown.DrawDown). Thanks Sedov Anton for reporting a bug in the early implementation.</li>
-  <li>Returns analysis (pyalgotrade.stratanalyzer.returns.Returns).</li>
-  <li>Trades analysis (pyalgotrade.stratanalyzer.trades.Trades).</li>
-  <li>Support for bar timezones (pyalgotrade.marketsession).</li>
+  <li>Sharpe Ratio analysis (pytradelab.stratanalyzer.sharpe.SharpeRatio).</li>
+  <li>Max. drawdown and max. drawdown duration analysis (pytradelab.stratanalyzer.drawdown.DrawDown). Thanks Sedov Anton for reporting a bug in the early implementation.</li>
+  <li>Returns analysis (pytradelab.stratanalyzer.returns.Returns).</li>
+  <li>Trades analysis (pytradelab.stratanalyzer.trades.Trades).</li>
+  <li>Support for bar timezones (pytradelab.marketsession).</li>
   <li>Support for sequence like operations in dataseries (__getitem__ and __len__. get_value and get_value_absolute will soon get deprecated).</li>
   <li>Support for mapping like operations in bar feeds (__getitem__ and __contains__).</li>
   <li>Support for mapping like operations in bar.Bars (__getitem__ and __contains__).</li>
@@ -19,14 +19,14 @@ Download here: <a href="http://sourceforge.net/projects/pyalgotrade/files/0.10/P
 </ul>
 
 <h2>Version: 0.9 (1/Sep/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.9.tar.gz">PyAlgoTrade-0.9.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.9.tar.gz">PyAlgoTrade-0.9.tar.gz</a>
 <ul>
   <li>Added a method to the strategy class to get notified when an order gets updated (on_order_updated). This is only called if the order was placed using the broker interface directly.</li>
   <li>Bug fix: A KeyError exception was raised in the strategy class when placing orders using the broker interface directly. Thanks 'Femto Trader' for reporting this.</li>
 </ul>
 
 <h2>Version 0.8 (28/Aug/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.8.tar.gz">PyAlgoTrade-0.8.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.8.tar.gz">PyAlgoTrade-0.8.tar.gz</a>
 <ul>
   <li>StrategyPlotter now plots each symbol in a separate subplot. getMainSubplot was replaced by getIntrumentSubplot.</li>
   <li>Strategy.exit_position allows setting the exit order as GTC or not, or matching the entry order (default).</li>
@@ -35,31 +35,31 @@ Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTr
 </ul>
 
 <h2>Version 0.7 (22/Aug/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.7.tar.gz">PyAlgoTrade-0.7.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.7.tar.gz">PyAlgoTrade-0.7.tar.gz</a>
 <ul>
   <li>Backtesting broker now allows customizing of order filling strategies.</li>
   <li>Added support Stop orders. Thanks Tibor Kiss for adding this.</li>
   <li>Added support StopLimit orders. Thanks Tibor Kiss for adding this.</li>
-  <li>TA-Lib integration (pyalgotrade.talibext.indicator).</li>
-  <li>Official support for NinjaTrader generated CSV files (pyalgotrade.barfeed.ninjatraderfeed.Feed). csvfeed.NinjaTraderRowParser was removed.</li>
-  <li>pyalgotrade.barfeed.csvfeed.YahooFeed was moved to pyalgotrade.barfeed.yahoofeed.Feed. pyalgotrade.barfeed.csvfeed.YahooFeed still works but it will be removed soon.</li>
+  <li>TA-Lib integration (pytradelab.talibext.indicator).</li>
+  <li>Official support for NinjaTrader generated CSV files (pytradelab.barfeed.ninjatraderfeed.Feed). csvfeed.NinjaTraderRowParser was removed.</li>
+  <li>pytradelab.barfeed.csvfeed.YahooFeed was moved to pytradelab.barfeed.yahoofeed.Feed. pytradelab.barfeed.csvfeed.YahooFeed still works but it will be removed soon.</li>
   <li>Major changes to the broker interface to support other broker types. These changes are not backwards compatible. Thanks Tibor Kiss for adding this.</li>
   <li>Bug fix: Was not honoring the good till canceled attribute when submiting exit orders from inside the position classes.</li>
   <li>Bug fix: Was not getting better prices (when available) for Limit orders. Thanks Tibor Kiss for reporting this.</li>
 </ul>
 
 <h2>Version 0.6 (26/Jun/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.6.tar.gz">PyAlgoTrade-0.6.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.6.tar.gz">PyAlgoTrade-0.6.tar.gz</a>
 <ul>
   <li>Added initial support for NinjaTrader export format (csvfeed.NinjaTraderRowParser).</li>
-  <li>pyalgotrade.optimizer.server.serve now returns the best results found.</li>
+  <li>pytradelab.optimizer.server.serve now returns the best results found.</li>
   <li>Fixes to the optimizer.local module when running on Windows.</li>
   <li>Fixes to the optimizer.local module. The socket used to find a random port to listen on was not being closed. Thanks Tibor Kiss for fixing this.</li>
   <li>Fixes to plotter.py. The marker style used was not supported in some matplotlib versions. Thanks Tibor Kiss for fixing this.</li>
 </ul>
 
 <h2>Version 0.5 (21/Jun/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.5.tar.gz">PyAlgoTrade-0.5.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.5.tar.gz">PyAlgoTrade-0.5.tar.gz</a>
 <ul>
   <li>Added support for optimizing strategies inside <b>Google App Engine</b>.</li>
   <li>StrategyPlotter supports plotting a range.</li>
@@ -68,7 +68,7 @@ Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTr
 </ul>
 
 <h2>Version 0.4 (8/May/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.4.tar.gz">PyAlgoTrade-0.4.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.4.tar.gz">PyAlgoTrade-0.4.tar.gz</a>
 <ul>
   <li>Added rate of change technical indicator.</li>
   <li>Added stochastic oscillator technical indicator.</li>
@@ -77,13 +77,13 @@ Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTr
 </ul>
 
 <h2>Version 0.3 (22/Apr/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.3.tar.gz">PyAlgoTrade-0.3.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.3.tar.gz">PyAlgoTrade-0.3.tar.gz</a>
 <ul>
   <li>Support for plotting strategies (StrategyPlotter).</li>
 </ul>
 
 <h2>Version 0.2 (14/Apr/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.2.tar.gz">PyAlgoTrade-0.2.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.2.tar.gz">PyAlgoTrade-0.2.tar.gz</a>
 <ul>
   <li>Added CrossAbove and CrossBelow technical indicators.</li>
   <li>Added support for limit orders.</li>
@@ -91,4 +91,4 @@ Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTr
 </ul>
 
 <h2>Version 0.1 (27/Mar/2012)</h2>
-Download here: <a href="https://github.com/downloads/gbeced/pyalgotrade/PyAlgoTrade-0.1.tar.gz">PyAlgoTrade-0.1.tar.gz</a>
+Download here: <a href="https://github.com/downloads/gbeced/pytradelab/PyAlgoTrade-0.1.tar.gz">PyAlgoTrade-0.1.tar.gz</a>

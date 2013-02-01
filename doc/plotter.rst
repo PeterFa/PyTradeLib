@@ -1,6 +1,6 @@
 plotter -- Strategy plotter
 ===========================
 
-.. automodule:: pyalgotrade.plotter
+.. automodule:: pytradelab.plotter
     :members: Subplot, InstrumentSubplot, StrategyPlotter
 

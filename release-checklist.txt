@@ -15,7 +15,7 @@ Release checklist
 [ ] Build package and upload to sourceforge.
 [ ] Update the website using RapidWeaver (doc + package).
 [ ] Update PyPi (both PKG-INFO and upload file).
-[ ] Install using 'sudo pip install pyalgotrade' and check that the right version was installed.
+[ ] Install using 'sudo pip install pytradelab' and check that the right version was installed.
 [ ] Run testcases using the installed lib.
 
 [ ] Tag (git tag v0.x-rtm -m "Version 0.x").

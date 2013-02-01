@@ -1,7 +1,7 @@
-from pyalgotrade import strategy
-from pyalgotrade.barfeed import yahoofeed
-from pyalgotrade.technical import ma
-from pyalgotrade.technical import rsi
+from pytradelab import strategy
+from pytradelab.barfeed import yahoofeed
+from pytradelab.technical import ma
+from pytradelab.technical import rsi
 
 class MyStrategy(strategy.Strategy):
     def __init__(self, feed):

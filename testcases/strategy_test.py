@@ -1,13 +1,13 @@
-# PyAlgoTrade
-# 
+# This file was originally part of PyAlgoTrade.
+#
 # Copyright 2011 Gabriel Martin Becedillas Ruiz
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,15 +25,15 @@ import Queue
 import time
 import pytz
 
-from pyalgotrade import strategy
-from pyalgotrade import barfeed
-from pyalgotrade import broker
-from pyalgotrade.broker import backtesting
-from pyalgotrade.barfeed import csvfeed
-from pyalgotrade.barfeed import yahoofeed
-from pyalgotrade.barfeed import ninjatraderfeed
-from pyalgotrade.utils import dt
-from pyalgotrade import marketsession
+from pytradelab import strategy
+from pytradelab import barfeed
+from pytradelab import broker
+from pytradelab.broker import backtesting
+from pytradelab.barfeed import csvfeed
+from pytradelab.barfeed import yahoofeed
+from pytradelab.barfeed import ninjatraderfeed
+from pytradelab.utils import dt
+from pytradelab import marketsession
 import common
 
 def us_equities_datetime(*params):

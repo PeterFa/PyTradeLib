@@ -1,5 +1,5 @@
-from pyalgotrade import dataseries
-from pyalgotrade import technical
+from pytradelab import dataseries
+from pytradelab import technical
 
 class Accumulator(technical.DataSeriesFilter):
     def __init__(self, dataSeries, windowSize):

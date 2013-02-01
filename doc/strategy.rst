@@ -1,6 +1,6 @@
 strategy -- Basic strategy classes
 ==================================
 
-.. automodule:: pyalgotrade.strategy
+.. automodule:: pytradelab.strategy
     :members: Position, Strategy
 

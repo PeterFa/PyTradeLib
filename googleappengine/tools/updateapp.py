@@ -1,13 +1,13 @@
-# PyAlgoTrade
-# 
+# This file was originally part of PyAlgoTrade.
+#
 # Copyright 2012 Gabriel Martin Becedillas Ruiz
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -76,15 +76,15 @@ def update_app_yaml(appPath, appId):
 	linePrefix = "application:"
 	update_file(appYamlPath, linePrefix, "application: %s" % appId, 1)
 
-def update_pyalgotrade(appPath):
-	srcPath = os.path.join(appPath, "..", "..", "pyalgotrade")
-	dstPath = os.path.join(appPath, "pyalgotrade")
+def update_pytradelab(appPath):
+	srcPath = os.path.join(appPath, "..", "..", "pytradelab")
+	dstPath = os.path.join(appPath, "pytradelab")
 
 	if os.path.exists(dstPath) == True:
 		print "WARNING: %s allready exists. Cleaning it up." % (dstPath)
 		shutil.rmtree(dstPath)
 
-	print "Preparing pyalgotrade package"
+	print "Preparing pytradelab package"
 	shutil.copytree(srcPath, dstPath)
 
 	linesReplaced = update_file(os.path.join(dstPath, "execcontext.py"), "running_in_google_app_engine = ", "running_in_google_app_engine = True", 1)
@@ -93,7 +93,7 @@ def main():
 	try:
 		(options, args) = parse_cmdline()
 		update_app_yaml(options.app_path, options.app_id)
-		update_pyalgotrade(options.app_path)
+		update_pytradelab(options.app_path)
 		appCfg = AppCfg(options.app_path, options.appcfg_path)
 		print "Updating application using appcfg.py"
 		appCfg.updateApp()

@@ -1,3 +1,13 @@
+<-------------------------------- PyTradeLab ---------------------------------->
+
+Version 0.0.1
+- [CHANGE] Switch from camelCasedAPIs to pythonic_lower_cased_apis
+- [CHANGE] Switch from Apache License v2.0 to LGPL v3.0 for all new PyTradeLab code
+- [CHANGE] Drop homegrown indicators in favor of using talib directly
+
+
+<-------------------------------- PyAlgoTrade --------------------------------->
+
 Version 0.10 (11/Jan/2013)
 . [NEW] Sharpe Ratio analysis (pyalgotrade.stratanalyzer.sharpe.SharpeRatio).
 . [NEW] Max. drawdown and max. drawdown duration analysis (pyalgotrade.stratanalyzer.drawdown.DrawDown). Thanks Sedov Anton for reporting a bug in the early implementation.

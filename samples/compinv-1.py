@@ -1,9 +1,9 @@
-from pyalgotrade import strategy
-from pyalgotrade.barfeed import yahoofeed
-from pyalgotrade.stratanalyzer import returns
-from pyalgotrade.stratanalyzer import sharpe
-from pyalgotrade import broker
-from pyalgotrade.utils import stats
+from pytradelab import strategy
+from pytradelab.barfeed import yahoofeed
+from pytradelab.stratanalyzer import returns
+from pytradelab.stratanalyzer import sharpe
+from pytradelab import broker
+from pytradelab.utils import stats
 
 class MyStrategy(strategy.Strategy):
     def __init__(self, feed):

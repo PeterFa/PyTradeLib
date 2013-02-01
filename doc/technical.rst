@@ -1,8 +1,8 @@
 technical -- Technical indicators
 =================================
 
-.. module:: pyalgotrade.technical
-.. autoclass:: pyalgotrade.technical.DataSeriesFilter
+.. module:: pytradelab.technical
+.. autoclass:: pytradelab.technical.DataSeriesFilter
     :members: calculateValue, get_data_series, getWindowSize
 
 Example
@@ -19,27 +19,27 @@ The output should be:
 Moving Averages
 ---------------
 
-.. automodule:: pyalgotrade.technical.ma
+.. automodule:: pytradelab.technical.ma
     :members: SMA, EMA, WMA
 
 Momentum Indicators
 -------------------
 
-.. automodule:: pyalgotrade.technical.rsi
+.. automodule:: pytradelab.technical.rsi
     :members: RSI
 
-.. automodule:: pyalgotrade.technical.stoch
+.. automodule:: pytradelab.technical.stoch
     :members: StochasticOscillator
 
-.. automodule:: pyalgotrade.technical.roc
+.. automodule:: pytradelab.technical.roc
     :members: RateOfChange
 
 Other Indicators
 ----------------
 
-.. automodule:: pyalgotrade.technical.trend
+.. automodule:: pytradelab.technical.trend
     :members: Slope
 
-.. automodule:: pyalgotrade.technical.cross
+.. automodule:: pytradelab.technical.cross
     :members: CrossAbove, CrossBelow
 

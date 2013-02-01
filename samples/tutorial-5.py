@@ -1,6 +1,6 @@
-from pyalgotrade import plotter
-from pyalgotrade.barfeed import yahoofeed
-from pyalgotrade.stratanalyzer import returns
+from pytradelab import plotter
+from pytradelab.barfeed import yahoofeed
+from pytradelab.stratanalyzer import returns
 import smacross_strategy
 
 

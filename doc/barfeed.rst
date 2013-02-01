@@ -1,22 +1,22 @@
 barfeed -- Bar providers
 ========================
 
-.. automodule:: pyalgotrade.barfeed
+.. automodule:: pytradelab.barfeed
     :members: BarFeed
     :inherited-members:
     :special-members:
 
-.. automodule:: pyalgotrade.barfeed.csvfeed
+.. automodule:: pytradelab.barfeed.csvfeed
     :members: BarFeed
 
 Yahoo! Finance
 --------------
-.. automodule:: pyalgotrade.barfeed.yahoofeed
+.. automodule:: pytradelab.barfeed.yahoofeed
     :members: Feed
 
 Ninja Trader
 ------------
-.. automodule:: pyalgotrade.barfeed.ninjatraderfeed
+.. automodule:: pytradelab.barfeed.ninjatraderfeed
     :members: Feed
 
 

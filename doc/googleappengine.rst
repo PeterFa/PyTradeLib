@@ -19,30 +19,30 @@ Once this is in place, the next steps are:
  3. Uploading bars.
  4. Running the strategy optimization.
 
-**All the commands in this tutorial assume that you're inside the directory where you extracted the PyAlgoTrade package.**
+**All the commands in this tutorial assume that you're inside the directory where you extracted the PyTradeLab package.**
 
 To create an application, you first have to log in to your **Google App Engine** account. Once inside, hit the **Create Application**
-button. You'll need to pick an **Application Identifier**. For this tutorial I used **pyalgotrade-tutorial** and
+button. You'll need to pick an **Application Identifier**. For this tutorial I used **pytradelab-tutorial** and
 for the rest of the settings I used the default values. Note that you'll have to pick a different, unique **Application Identifier**
-to create your application. So, whenever you read **pyalgotrade-tutorial** keep in mind that you have to replace that with your
+to create your application. So, whenever you read **pytradelab-tutorial** keep in mind that you have to replace that with your
 own **Application Identifier**.
 
 Next, you'll use the updateapp.py script to upload your app. Note that you need to supply your **Application Identifier** as well
 as the path were your app.yaml resides: ::
 
-    python googleappengine/tools/updateapp.py --app_id=pyalgotrade-tutorial --app_path=googleappengine/app
+    python googleappengine/tools/updateapp.py --app_id=pytradelab-tutorial --app_path=googleappengine/app
 
 updateapp.py uses the appcfg.py utility from the **Google App Engine SDK for Python**, so you'll be asked for your email
 and password. If appcfg.py is not in the PATH, then you'll need to supply the --appcfg_path parameter too.
 The output should look like this: ::
 
     Updating app.yaml
-    Preparing pyalgotrade package
+    Preparing pytradelab package
     Updating application using appcfg.py
-    Application: pyalgotrade-tutorial; version: 1
+    Application: pytradelab-tutorial; version: 1
     Host: appengine.google.com
 
-    Starting update of app: pyalgotrade-tutorial, version: 1
+    Starting update of app: pytradelab-tutorial, version: 1
     Getting current resource limits.
     Email: YOUR_USER_NAME_HERE@gmail.com
     Password for YOUR_USER_NAME_HERE@gmail.com:
@@ -63,7 +63,7 @@ The output should look like this: ::
     Checking if deployment succeeded.
     Deployment successful.
     Checking if updated app version is serving.
-    Completed update of app: pyalgotrade-tutorial, version: 1
+    Completed update of app: pytradelab-tutorial, version: 1
     Uploading index definitions.
     Uploading task queue entries.
 
@@ -71,13 +71,13 @@ This basic application that you just uploaded includes the RSI2 strategy from th
 
 Next, you'll download 3 years of daily bars for 'Dow Jones Industrial Average': ::
 
-    python -c "from pyalgotrade.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2009)" > dia-2009.csv
-    python -c "from pyalgotrade.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2010)" > dia-2010.csv
-    python -c "from pyalgotrade.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2011)" > dia-2011.csv
+    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2009)" > dia-2009.csv
+    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2010)" > dia-2010.csv
+    python -c "from pytradelab.tools import yahoofinance; print yahoofinance.get_daily_csv('dia', 2011)" > dia-2011.csv
 
 and then upload those to your app with the following command: ::
 
-    python googleappengine/tools/uploadbars.py --symbol=dia --url=http://pyalgotrade-tutorial.appspot.com/remote_api dia-2009.csv dia-2010.csv dia-2011.csv
+    python googleappengine/tools/uploadbars.py --symbol=dia --url=http://pytradelab-tutorial.appspot.com/remote_api dia-2009.csv dia-2010.csv dia-2011.csv
 
 uploadbars.py uses the appcfg.py utility from the **Google App Engine SDK for Python**, so you'll be asked for your email
 and password. If appcfg.py is not in the PATH, then you'll need to supply the --appcfg_path parameter too.
@@ -95,11 +95,11 @@ The output should look like this: ::
     [INFO    ] HTTP connections: 8/second
     [INFO    ] Entities inserted/fetched/modified: 20/second
     [INFO    ] Batch Size: 10
-    Please enter login credentials for pyalgotrade-tutorial.appspot.com
+    Please enter login credentials for pytradelab-tutorial.appspot.com
     Email: YOUR_USER_NAME_HERE@gmail.com
     Password for YOUR_USER_NAME_HERE@gmail.com:
     [INFO    ] Opening database: bulkloader-progress-20120615.231426.sql3
-    [INFO    ] Connecting to pyalgotrade-tutorial.appspot.com/remote_api
+    [INFO    ] Connecting to pytradelab-tutorial.appspot.com/remote_api
     [INFO    ] Starting import; maximum 10 entities per post
     ............................................................................
     [INFO    ] 758 entities total, 0 previously transferred
@@ -114,7 +114,7 @@ Note that this command requires 3 important things:
 
 Now that you have your application deployed into **Google App Engine** and some bars available, you should be ready to queue a
 strategy execution.
-Try opening http://pyalgotrade-tutorial.appspot.com/ in a browser and login with your **Google App Engine** credentials.
+Try opening http://pytradelab-tutorial.appspot.com/ in a browser and login with your **Google App Engine** credentials.
 It is possible that you get an error that says: ::
 
     The index for this query is not ready to serve. See the Datastore Indexes page in the Admin Console.
@@ -146,7 +146,7 @@ executions have finished. If you refresh the page a couple of minutes later you 
 So, if you execute this one more time you'll consume all of your free daily quota and you'll have to wait 24hs to use the
 web application again. Another option would be to enable billing to go beyond the free quota.
 
-As a reference, it took me 3hs using the **pyalgotrade.optimizer.local** module get to the same results in my dual core 2Ghz notebook.
+As a reference, it took me 3hs using the **pytradelab.optimizer.local** module get to the same results in my dual core 2Ghz notebook.
 
 Adding new strategies is really easy. All you have to do is follow 3 simple steps:
 
@@ -159,8 +159,8 @@ thus wasting resources unnecessarily.
 
 Known bugs/limitations:
 
- * The **pyalgotrade.technical.trend.Slope** technical indicator is currently not available when running inside the **Google App Engine**.
+ * The **pytradelab.technical.trend.Slope** technical indicator is currently not available when running inside the **Google App Engine**.
    This is because it depends on external libraries (NumPy and SciPy) that are not available in that environment.
- * The **pyalgotrade.talibext.indicator** module is currently not available when running inside the **Google App Engine**.
+ * The **pytradelab.talibext.indicator** module is currently not available when running inside the **Google App Engine**.
    This is because it depends on external libraries (talib, NumPy, SciPy, etc) that are not available in that environment.
 

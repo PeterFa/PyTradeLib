@@ -2,7 +2,7 @@ Computational Investing Part I
 ==============================
 
 As I was taking the `Computational Investing Part I <https://class.coursera.org/compinvesting1-2012-001/class>`_ course in 2012
-I had to work on a set of assignments and for some of them I used PyAlgoTrade.
+I had to work on a set of assignments and for some of them I used PyTradeLab.
 
 Homework 1
 ----------

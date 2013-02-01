@@ -1,13 +1,13 @@
-# PyAlgoTrade
-# 
+# This file was originally part of PyAlgoTrade.
+#
 # Copyright 2012 Gabriel Martin Becedillas Ruiz
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,9 +23,9 @@ import pickle
 import zlib
 import traceback
 
-from pyalgotrade import barfeed
-from pyalgotrade.barfeed import membf
-from pyalgotrade import bar
+from pytradelab import barfeed
+from pytradelab.barfeed import membf
+from pytradelab import bar
 import persistence
 from queuehandlers import seresult
 from common import cls
@@ -33,18 +33,18 @@ from common import timer
 import common.logger
 
 
-# Converts a persistence.Bar to a pyalgotrade.bar.Bar.
-def ds_bar_to_pyalgotrade_bar(dsBar):
+# Converts a persistence.Bar to a pytradelab.bar.Bar.
+def ds_bar_to_pytradelab_bar(dsBar):
     return bar.Bar(dsBar.date_time, dsBar.open_, dsBar.high, dsBar.low, dsBar.close_, dsBar.volume, dsBar.adj_close)
 
-# Loads pyalgotrade.bar.Bars objects from the db.
-def load_pyalgotrade_daily_bars(symbol, barType, from_date_time, to_date_time):
+# Loads pytradelab.bar.Bars objects from the db.
+def load_pytradelab_daily_bars(symbol, barType, from_date_time, to_date_time):
     assert(barType == persistence.Bar.Type.DAILY)
-    # Load pyalgotrade.bar.Bar objects from the db.
+    # Load pytradelab.bar.Bar objects from the db.
     dbBars = persistence.Bar.get_bars(symbol, barType, from_date_time, to_date_time)
-    bars = [ds_bar_to_pyalgotrade_bar(dbBar) for dbBar in dbBars]
+    bars = [ds_bar_to_pytradelab_bar(dbBar) for dbBar in dbBars]
 
-    # Use a feed to build pyalgotrade.bar.Bars objects.
+    # Use a feed to build pytradelab.bar.Bars objects.
     feed = membf.Feed(barfeed.Frequency.DAY)
     feed.add_bars_from_sequence(symbol, bars)
     ret = []
@@ -111,7 +111,7 @@ class StrategyExecutor:
         ret = self.__barCache.get(stratExecConfig.key())
         if ret == None:
             self.__logger.info("Loading '%s' bars from %s to %s" % (stratExecConfig.symbol, stratExecConfig.firstDate, stratExecConfig.lastDate))
-            ret = load_pyalgotrade_daily_bars(stratExecConfig.symbol, stratExecConfig.barType, stratExecConfig.firstDate, stratExecConfig.lastDate)
+            ret = load_pytradelab_daily_bars(stratExecConfig.symbol, stratExecConfig.barType, stratExecConfig.firstDate, stratExecConfig.lastDate)
             self.__barCache.add(stratExecConfig.key(), ret)
         return ret
 

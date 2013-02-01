@@ -1,11 +1,11 @@
 TA-Lib integration
 ==================
 
-The **pyalgotrade.talibext.indicator** module provides integration with Python wrapper for TA-Lib (http://mrjbq7.github.com/ta-lib/)
-to enable calling TA-Lib functions directly with :class:`pyalgotrade.dataseries.DataSeries` or :class:`pyalgotrade.dataseries.BarDataSeries`
+The **pytradelab.talibext.indicator** module provides integration with Python wrapper for TA-Lib (http://mrjbq7.github.com/ta-lib/)
+to enable calling TA-Lib functions directly with :class:`pytradelab.dataseries.DataSeries` or :class:`pytradelab.dataseries.BarDataSeries`
 instances instead of numpy arrays.
 
-If you're familiar with the **talib** module, then using the **pyalgotrade.talibext.indicator** module should be straightforward.
+If you're familiar with the **talib** module, then using the **pytradelab.talibext.indicator** module should be straightforward.
 When using **talib** standalone you do something like this: ::
 
     import numpy
@@ -14,21 +14,21 @@ When using **talib** standalone you do something like this: ::
     data = numpy.random.random(100)
     upper, middle, lower = talib.BBANDS(data, matype=talib.MA_T3)
 
-To use the **pyalgotrade.talibext.indicator** module in your strategies you should do something like this: ::
+To use the **pytradelab.talibext.indicator** module in your strategies you should do something like this: ::
 
     def on_bars(self, bars):
         closeDs = self.get_feed().get_data_series("orcl").get_close_data_series()
-        upper, middle, lower = pyalgotrade.talibext.indicator.BBANDS(closeDs, 100, matype=talib.MA_T3)
+        upper, middle, lower = pytradelab.talibext.indicator.BBANDS(closeDs, 100, matype=talib.MA_T3)
         if upper != None:
             print "%s" % upper[-1]
 
-Every function in the **pyalgotrade.talibext.indicator** module receives one or more dataseries (most receive just one) and the
+Every function in the **pytradelab.talibext.indicator** module receives one or more dataseries (most receive just one) and the
 number of values to use from the dataseries. In the example above, we're calculating Bollinger Bands over the last 100 closing prices.
 
-If the parameter name is **ds**, then you should pass a regular :class:`pyalgotrade.dataseries.DataSeries` instance, like the one
+If the parameter name is **ds**, then you should pass a regular :class:`pytradelab.dataseries.DataSeries` instance, like the one
 shown in the example above.
 
-If the parameter name is **barDs**, then you should pass a :class:`pyalgotrade.dataseries.BarDataSeries` instance, like in the next
+If the parameter name is **barDs**, then you should pass a :class:`pytradelab.dataseries.BarDataSeries` instance, like in the next
 example: ::
 
     def on_bars(self, bars):
@@ -37,8 +37,8 @@ example: ::
         if sar != None:
             print "%s" % sar[-1]
 
-The following TA-Lib functions are available through the **pyalgotrade.talibext.indicator** module:
+The following TA-Lib functions are available through the **pytradelab.talibext.indicator** module:
 
-.. automodule:: pyalgotrade.talibext.indicator
+.. automodule:: pytradelab.talibext.indicator
     :members:
     :member-order: bysource
