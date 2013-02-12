@@ -160,6 +160,9 @@ class Bar(object):
             '%i' % self.get_volume()
             )
 
+    def __unicode__(self):
+        return unicode(self.__str__())
+
 
 class Bars(object):
     """A group of :class:`Bar` objects.

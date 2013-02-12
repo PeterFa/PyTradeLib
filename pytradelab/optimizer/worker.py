@@ -47,6 +47,37 @@ def call_and_retry_on_network_error(function, retry_count, *parameters):
     ret = call_function(function, *parameters)
     return ret
 
+
+# This class is used by the optimizer module. The barfeed is already built on
+# the server side, and the bars are sent back to workers.
+class OptimizerBarFeed(BasicBarFeed):
+    def __init__(self, frequency, symbols, bars):
+        BasicBarFeed.__init__(self, frequency)
+        for symbol in symbols:
+            self.register_symbol(symbol)
+        self.__bars = bars
+        self.__next_bar = 0
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def join(self):
+        pass
+
+    def get_next_bars(self):
+        ret = None
+        if self.__next_bar < len(self.__bars):
+            ret = self.__bars[self.__next_bar]
+            self.__next_bar += 1
+        return ret
+
+    def stop_dispatching(self):
+        return self.__next_bar >= len(self.__bars)
+
+
 class Worker(object):
     def __init__(self, address, port):
         url = "http://%s:%s/PyTradeLabRPC" % (address, port)
