@@ -1,3 +1,20 @@
+# This file is part of PyTradeLab.
+#
+# Copyright 2013 Brian A Cappello <briancappello at gmail>
+#
+# PyTradeLab is free software: you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# PyTradeLab is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with PyTradeLab.  If not, see http://www.gnu.org/licenses/
+
 from distutils.core import setup
 
 setup(
@@ -24,11 +41,12 @@ setup(
         'pytradelab',
         'pytradelab.barfeed',
         'pytradelab.broker',
+        'pytradelab.dataproviders',
+        'pytradelab.dataproviders.yahoo',
+        'pytradelab.deprecated',
         'pytradelab.optimizer',
         'pytradelab.stratanalyzer',
-        'pytradelab.talibext',
         'pytradelab.technical',
-        'pytradelab.tools',
         'pytradelab.utils',
         ],
 )
