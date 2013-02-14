@@ -15,11 +15,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PyTradeLab.  If not, see http://www.gnu.org/licenses/
 
-import lz4
 import datetime
 
 from pytradelab import utils
-from pytradelab import settings
 from pytradelab import bar
 
 
