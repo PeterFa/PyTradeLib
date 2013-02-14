@@ -52,22 +52,22 @@ class YahooFrequencyProvider(object):
             '%.2f' % bar_.get_high(),
             '%.2f' % bar_.get_low(),
             '%.2f' % bar_.get_close(),
-            '%i' % bar_.getVolume(),
-            '%.2f' % bar_.getAdjClose()
+            '%i' % bar_.get_volume(),
+            '%.2f' % bar_.get_adj_close()
             ])
         return ret
 
     @utils.lower
-    def get_url(self, symbol, frequency, fromDate=None):
-        fromDate = fromDate or datetime.date(1800, 1, 1)
-        toDate = datetime.date.today()
-        if fromDate == toDate:
-            fromDate -= datetime.timedelta(days=1)
+    def get_url(self, symbol, frequency, from_date=None):
+        from_date = from_date or datetime.date(1800, 1, 1)
+        to_date = datetime.date.today()
+        if from_date == to_date:
+            from_date -= datetime.timedelta(days=1)
         if frequency not in [bar.Frequency.DAY, bar.Frequency.WEEK, bar.Frequency.MONTH]:
             frequency = bar.Frequency.DAY
         url = 'http://ichart.finance.yahoo.com/table.csv?s=%s&a=%d&b=%d&c=%d&d=%d&e=%d&f=%d&g=%s&ignore=.csv' % (
-            symbol, fromDate.month-1, fromDate.day, fromDate.year,
-            toDate.month-1, toDate.day, toDate.year, frequency)
+            symbol, from_date.month-1, from_date.day, from_date.year,
+            to_date.month-1, to_date.day, to_date.year, frequency)
         return url
 
     def process_downloaded_data(self, data_file_paths):
