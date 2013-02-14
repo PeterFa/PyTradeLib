@@ -102,38 +102,40 @@ class Manager(object):
             logger.info('sleeping for 10 seconds')
             time.sleep(10)
 
-    def index_initialized(self):
-        return os.path.exists(settings.SYMBOL_INDEX_PATH)
-
     def index_updated(self):
-        return self.__last_updated['symbol_index'].get('updated', False)
+        return self._db.index_updated()
 
     def update_index(self):
-        index = yql.SymbolIndex.get_data()
-        if not os.path.exists(settings.SYMBOL_INDEX_PATH):
-            index['new_symbols'] = index['all_symbols']
-            index['removed_symbols'] = {}
-        else:
-            original_index = utils.load_from_json(settings.SYMBOL_INDEX_PATH)
-            index['new_symbols'] = {}
-            for symbol in index['all_symbols'].keys():
-                if symbol not in original_index['all_symbols']:
-                    index['new_symbols'][symbol] = index['all_symbols'][symbol]
-                else:
-                    original_index['all_symbols'].pop(symbol)
-            index['removed_symbols'] = original_index['all_symbols']
-        utils.save_to_json(index, settings.SYMBOL_INDEX_PATH)
-        self.__last_updated['symbol_index'] = True
-        self.initialize_database(index)
+        if not self.index_updated():
+            self._update_index(index)
+
+    def _update_index(self, index):
+        new_index = yql.SymbolIndex.get_data()
+        all_new_symbols = [x['symbol'] for x in new_index['symbols']]
+        all_existing_symbols = self._db.get_symbols()
+        new_symbols = \
+            [x for x in all_new_symbols if x not in all_existing_symbols]
+        removed_symbols = \
+            [x for x in all_existing_symbols if x not in all_new_symbols]
+        for symbol in removed_symbols:
+            self._db.delete_symbol(symbol)
+        self.__init_or_update_index(new_index)
 
         # FIXME: emit these changes instead of printing them
-        print 'newly added symbols: %s\n' % index['new_symbols'].keys()
-        print 'removed symbols: %s\n' % index['removed_symbols'].keys()
+        if new_symbols:
+            print 'newly added symbols: %s\n' % new_symbols
+        else:
+            print 'no new symbols in this index update'
 
-    def initialize_database(self, index):
-        self._db.insert_or_update_sectors(index['sector_industries'].keys())
-        self._db.insert_or_update_industries([(k, v) for k, v in index['industry_sectors'].items()])
-        self._db.insert_or_update_symbols([d for d in index['all_symbols'].values()])
+        if removed_symbols:
+            print 'removed symbols: %s\n' % removed_symbols
+        else:
+            print 'no removed symbols in this index update'
+
+    def __init_or_update_index(self, index):
+        self._db.insert_or_update_sectors(index['sectors'])
+        self._db.insert_or_update_industries(index['industry_sectors'])
+        self._db.insert_or_update_symbols(index['symbols'])
 
     def historical_initialized(self, symbol, frequency):
         return self.__last_updated['historical_initialized'][symbol].get(frequency, False)

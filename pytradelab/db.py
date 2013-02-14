@@ -79,6 +79,7 @@ class Database(object):
             self._create_tables()
 
     def _connect(self, db_file_path):
+        self._db_file_path = db_file_path
         initialize = False
         if not os.path.exists(db_file_path):
             utils.mkdir_p(settings.DATA_DIR)
@@ -184,15 +185,14 @@ class Database(object):
         :param symbol_dicts: dict or list of dicts. Required Keys: symbol. Optional: name, industry, exchange, ipo_date, newest_date
         :type symbol_dicts: [{keys: symbol, [any optional keys]}]
         '''
-        if not isinstance(symbol_dicts, list):
+        if not isinstance(symbol_dicts, (list, tuple)):
             assert(isinstance(symbol_dicts, dict))
             symbol_dicts = [symbol_dicts]
-        d = symbol_dicts[0]
         for d in symbol_dicts:
             d['symbol'] = d['symbol'].lower()
             if 'industry' in d:
                 d['industry_id'] = self._get_industry_id(d.pop('industry'))
-        self.__insert_or_update('symbol', symbol_dicts, remove_keys=['sector'])
+        self.__insert_or_update('symbol', symbol_dicts)
 
     def insert_or_update_stats(self, stats):
         # some of the keys in stats belong in the symbol table; separate them here.
@@ -233,8 +233,11 @@ class Database(object):
                 '?,' * (len(self._stats_columns) - 1))
         def param_gen():
             for instrument in instruments:
+                keys = self._stats_columns.keys()
+                keys.pop(0) # 'symbol_id'
                 yield (
                     self._get_symbol_id(instrument.symbol()),
+                    #*[instrument[key] for key in keys],
                     instrument['last_trade_datetime'],
                     instrument['last_trade_price'],
                     instrument['last_trade_volume'],
@@ -258,6 +261,16 @@ class Database(object):
                     instrument['short_ratio'],
                     )
         self._execute_many(sql, param_gen)
+
+    def delete_symbol(self, symbol):
+        id_ = self._get_symbol_id(symbol)
+        delete_sql = [
+            "DELETE FROM stats WHERE symbol_id=?"
+            "DELETE FROM symbol WHERE symbol_id=?",
+            ]
+        for sql in delete_sql:
+            self._connection.execute(sql, (id_,))
+        self._connection.commit()
 
     def get_symbols(self):
         sql = "SELECT symbol FROM symbol"

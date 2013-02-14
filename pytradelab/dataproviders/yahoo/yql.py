@@ -15,16 +15,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with PyTradeLab.  If not, see http://www.gnu.org/licenses/
 
-import os
 import urllib
 import datetime
 
 try: import simplejson as json
 except: import json
 
-from collections import defaultdict
 from pytradelab import utils
-from pytradelab import settings
 from pytradelab.failed import Symbols as FailedSymbols
 
 
@@ -92,16 +89,14 @@ class SymbolIndex(object):
 
     def get_data(self):
         ''' Returns a dict with the following key/value pairs:
-        'sector_industries': { 'all sector names': ['industry names in each sector'] }
-        'industry_sectors': { 'all industry names': 'sector name for each industry' }
-        'industry_symbols': { 'all industry names': ['symbols in each industry'] }
-        'all_symbols': { 'all symbols': { keys: symbol, name, sector, industry } }
+        'sectors': ['sector names']
+        'industry_sectors': [('industry names', 'sector names')]
+        'symbols': [{ keys: symbol, name, industry }]
         '''
         ret = {
-            'sector_industries': defaultdict(list),
-            'industry_sectors': {},
-            'industry_symbols': defaultdict(list),
-            'all_symbols': {},
+            'sectors': [],
+            'industry_sectors': [],
+            'symbols': [],
             }
         yql = 'select * from yahoo.finance.sectors'
         json_sector_list = execute_yql(yql, 'sector')
@@ -118,32 +113,25 @@ class SymbolIndex(object):
         ret['industry_ids'] = [] # a temporary list to be popped off by self.get_data()
         for sector in json_sector_list:
             sector_name = sector['name']
+            ret['sectors'].append(sector_name)
             industries = sector['industry']
             if not isinstance(industries, list):
                 industries = [industries]
             for industry in industries:
                 ret['industry_ids'].append(industry['id'])
-                ret['industry_sectors'][industry['name']] = sector_name
-                ret['sector_industries'][sector_name].append(industry['name'])
+                ret['industry_sectors'].append((industry['name'], sector_name))
         return ret
 
     def __parse_industry_symbols(self, json_industry_list, ret):
         for json_industry in json_industry_list:
-            industry_name = json_industry['name']
             if 'company' in json_industry:
                 for json_instrument in json_industry['company']:
                     if isinstance(json_instrument, dict):
-                        symbol = json_instrument['symbol'].lower()
-                        sector_name = ret['industry_sectors'][industry_name]
-                        company_name = json_instrument['name'].encode('utf-8')
-                        symbol_dict = {
-                            'symbol': symbol,
-                            'sector': sector_name,
-                            'industry': industry_name,
-                            'name': company_name,
-                            }
-                        ret['all_symbols'][symbol] = symbol_dict
-                        ret['industry_symbols'][industry_name].append(symbol)
+                        ret['symbols'].append({
+                            'symbol': json_instrument['symbol'].lower(),
+                            'name': json_instrument['name'].encode('utf-8'),
+                            'industry': json_industry['name'],
+                            })
         return ret
 
 SymbolIndex = SymbolIndex()
