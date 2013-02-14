@@ -24,7 +24,7 @@ from pytradelib import utils
 from pytradelib import settings
 
 
-class Database(object):
+class BaseDatabase(object):
     def __init__(self, db_file_path=None):
         if db_file_path is None:
             db_file_path = os.path.join(settings.DATA_DIR, 'pytradelib.sqlite')
@@ -115,11 +115,11 @@ class Database(object):
             ','.join([' '.join(x) for x in column_defs_dict.items()])))
         self._connection.commit()
 
-    def _select_row(self, sql, params=None):
-        rows = self._select_rows(sql, params)
+    def select_row(self, sql, params=None):
+        rows = self.select_rows(sql, params)
         return rows[0] if rows else None
 
-    def _select_rows(self, sql, params=None, include_none=True):
+    def select_rows(self, sql, params=None, include_none=True):
         cursor = self._connection.cursor()
         if params:
             cursor.execute(sql, params)
@@ -144,17 +144,30 @@ class Database(object):
         cursor.close()
         return ret
 
-    def _execute_many(self, sql, params_generator):
+    def insert_or_update(self, table_name, list_of_dicts, remove_keys=None):
+        if remove_keys:
+            for d in list_of_dicts:
+                for key in remove_keys:
+                    d.pop(key)
+        columns = list_of_dicts[0].keys()
+        sql = "INSERT OR REPLACE INTO %s (%s) VALUES (%s?)" % ( table_name,
+            ','.join(columns), '?,' * (len(columns) - 1))
+        def param_gen():
+            for d in list_of_dicts:
+                yield tuple(v for v in d.values())
+        self.execute_many(sql, param_gen)
+
+    def execute_many(self, sql, params_generator):
         cursor = self._connection.cursor()
         cursor.executemany(sql, params_generator())
         self._connection.commit()
         cursor.close()
 
     @utils.lower
-    def _get_symbol_id(self, symbol):
+    def get_symbol_id(self, symbol):
         try:
             sql = "SELECT symbol_id FROM symbol WHERE symbol=?"
-            return self._select_row(sql, (symbol,))['symbol_id']
+            return self.select_row(sql, (symbol,))['symbol_id']
         except IndexError:
             sql = 'INSERT INTO symbol (symbol) VALUES (?)'
             ret = self._connection.execute(sql, (symbol,))
@@ -163,13 +176,80 @@ class Database(object):
             self._connection.commit()
             return ret.lastrowid
 
-    def _get_sector_id(self, sector):
+    def get_sector_id(self, sector):
         sql = "SELECT sector_id FROM sector WHERE name=?"
-        return self._select_row(sql, (sector,))['sector_id']
+        return self.select_row(sql, (sector,))['sector_id']
 
-    def _get_industry_id(self, industry):
+    def get_industry_id(self, industry):
         sql = "SELECT industry_id FROM industry WHERE name=?"
-        return self._select_row(sql, (industry,))['industry_id']
+        return self.select_row(sql, (industry,))['industry_id']
+
+    @utils.lower
+    def delete_symbol(self, symbol):
+        id_ = self.get_symbol_id(symbol)
+        delete_sql = [
+            "DELETE FROM stats WHERE symbol_id=?"
+            "DELETE FROM symbol WHERE symbol_id=?",
+            ]
+        for sql in delete_sql:
+            self._connection.execute(sql, (id_,))
+        self._connection.commit()
+
+
+class Database(object):
+    def __init__(self, db_file_path=None):
+        self._db = BaseDatabase(db_file_path)
+
+    def get_symbols(self):
+        sql = "SELECT symbol FROM symbol"
+        return [row['symbol'] for row in self._db.select_rows(sql)]
+
+    def get_sectors(self):
+        sql = "SELECT name FROM sector"
+        return [row['name'] for row in self._db.select_rows(sql)]
+
+    def get_industries(self):
+        sql = "SELECT name FROM industry"
+        return [row['name'] for row in self._db.select_rows(sql)]
+
+    def get_index(self):
+        sql = 'SELECT industry.name AS industry, sector.name AS sector FROM '\
+            'industry JOIN sector ON (industry.sector_id = sector.sector_id)'
+        ret = {
+            'sectors': self.get_sectors(),
+            'industry_sectors': [(x['industry'], x['sector'])
+                                for x in self._db.select_rows(sql)]
+            }
+        sql = 'SELECT symbol, symbol.name AS name, sector.name AS sector, industry.name AS industry'\
+            ' FROM symbol JOIN industry ON (symbol.industry_id = industry.industry_id)'\
+            ' JOIN sector ON (industry.sector_id = sector.sector_id)'
+        ret['symbols'] = self._db.select_rows(sql)
+        return ret
+
+    def get_updated(self, what, symbol=None):
+        sql = 'SELECT %s FROM ' % what
+        if what in self._system_updated_columns:
+            sql += 'system_last_updated'
+            row = self._db.select_row(sql)
+        else:
+            if symbol is None:
+                raise Exception('must provide the symbol with "%s"' % what)
+            sql += 'symbol_last_updated WHERE symbol=?'
+            row = self._db.select_row(sql, (symbol,))
+        when = row[what]
+        return datetime.datetime.strptime(when, '%Y-%m-%d %H:%M:%S')
+
+    def set_updated(self, what, symbol=None, when=None):
+        if not when:
+            when = datetime.datetime.now() # FIXME: use UTC
+        when = when.strftime('%Y-%m-%d %H:%M:%S')
+        if what in self._system_updated_columns:
+            self._db.insert_or_update('system_last_updated', [{what: when}])
+        else:
+            if symbol is None:
+                raise Exception('must provide the symbol with "%s"' % what)
+            self._db.insert_or_update('symbol_last_updated',
+                [{'symbol': symbol, what: when}])
 
     def insert_or_update_sectors(self, sectors):
         ''' Save sectors to the db.
@@ -179,7 +259,7 @@ class Database(object):
         '''
         if not isinstance(sectors, list):
             sectors = [sectors]
-        self.__insert_or_update('sector', [{'name': s} for s in sectors])
+        self._db.insert_or_update('sector', [{'name': s} for s in sectors])
 
     def insert_or_update_industries(self, industry_sectors):
         ''' Save industries to the db.
@@ -191,8 +271,8 @@ class Database(object):
             assert(isinstance(industry_sectors, tuple))
             assert(len(industry_sectors) == 2)
             industry_sectors = [industry_sectors]
-        self.__insert_or_update('industry', [
-            { 'name': x, 'sector_id': self._get_sector_id(y)}
+        self._db.insert_or_update( 'industry', [
+            {'name': x, 'sector_id': self._db.get_sector_id(y)}
             for x, y in industry_sectors
             ])
 
@@ -208,8 +288,8 @@ class Database(object):
         for d in symbol_dicts:
             d['symbol'] = d['symbol'].lower()
             if 'industry' in d:
-                d['industry_id'] = self._get_industry_id(d.pop('industry'))
-        self.__insert_or_update('symbol', symbol_dicts)
+                d['industry_id'] = self._db.get_industry_id(d.pop('industry'))
+        self._db.insert_or_update('symbol', symbol_dicts)
 
     def insert_or_update_stats(self, stats):
         # some of the keys in stats belong in the symbol table; separate them here.
@@ -222,20 +302,7 @@ class Database(object):
                     new_d[key] = d.pop(key)
             symbol_dicts.append(new_d)
         self.insert_or_update_symbols(symbol_dicts)
-        self.__insert_or_update('stats', stats)
-
-    def __insert_or_update(self, table_name, list_of_dicts, remove_keys=None):
-        if remove_keys:
-            for d in list_of_dicts:
-                for key in remove_keys:
-                    d.pop(key)
-        columns = list_of_dicts[0].keys()
-        sql = "INSERT OR REPLACE INTO %s (%s) VALUES (%s?)" % ( table_name,
-            ','.join(columns), '?,' * (len(columns) - 1))
-        def param_gen():
-            for d in list_of_dicts:
-                yield tuple(v for v in d.values())
-        self._execute_many(sql, param_gen)
+        self._db.insert_or_update('stats', stats)
 
     def insert_or_update_instruments(self, instruments):
         all_symbols = {}
@@ -250,105 +317,26 @@ class Database(object):
                 '?,' * (len(self._stats_columns) - 1))
         def param_gen():
             for instrument in instruments:
+                params = [self._db.get_symbol_id(instrument.symbol())]
                 keys = self._stats_columns.keys()
                 keys.pop(0) # 'symbol_id'
-                yield (
-                    self._get_symbol_id(instrument.symbol()),
-                    #*[instrument[key] for key in keys],
-                    instrument['last_trade_datetime'],
-                    instrument['last_trade_price'],
-                    instrument['last_trade_volume'],
-                    instrument['year_high'],
-                    instrument['year_low'],
-                    instrument['ma_50'],
-                    instrument['ma_200'],
-                    instrument['market_cap'],
-                    instrument['average_daily_volume'],
-                    instrument['dividend_pay_date'],
-                    instrument['ex_dividend_date'],
-                    instrument['dividend_share'],
-                    instrument['dividend_yield'],
-                    instrument['book_value'],
-                    instrument['ebitda'],
-                    instrument['earnings_per_share'],
-                    instrument['peg_ratio'],
-                    instrument['pe_ratio'],
-                    instrument['price_per_book'],
-                    instrument['price_per_sales'],
-                    instrument['short_ratio'],
-                    )
-        self._execute_many(sql, param_gen)
+                params.extend([instrument[key] for key in keys])
+                yield tuple(params)
+        self._db.execute_many(sql, param_gen)
 
+    @utils.lower
     def delete_symbol(self, symbol):
-        id_ = self._get_symbol_id(symbol)
-        delete_sql = [
-            "DELETE FROM stats WHERE symbol_id=?"
-            "DELETE FROM symbol WHERE symbol_id=?",
-            ]
-        for sql in delete_sql:
-            self._connection.execute(sql, (id_,))
-        self._connection.commit()
-
-    def get_updated(self, what, symbol=None):
-        sql = 'SELECT %s FROM ' % what
-        if what in self._system_updated_columns:
-            sql += 'system_last_updated'
-            row = self._select_row(sql)
-        else:
-            if symbol is None:
-                raise Exception('must provide the symbol with "%s"' % what)
-            sql += 'symbol_last_updated WHERE symbol=?'
-            row = self._select_row(sql, (symbol,))
-        when = row[what]
-        return datetime.datetime.strptime(when, '%Y-%m-%d %H:%M:%S')
-
-    def set_updated(self, what, symbol=None, when=None):
-        if not when:
-            when = datetime.datetime.now() # FIXME: use UTC
-        when = when.strftime('%Y-%m-%d %H:%M:%S')
-        if what in self._system_updated_columns:
-            self.__insert_or_update('system_last_updated', [{what: when}])
-        else:
-            if symbol is None:
-                raise Exception('must provide the symbol with "%s"' % what)
-            self.__insert_or_update('symbol_last_updated',
-                [{'symbol': symbol, what: when}])
-
-    def get_symbols(self):
-        sql = "SELECT symbol FROM symbol"
-        return [row['symbol'] for row in self._select_rows(sql)]
-
-    def get_sectors(self):
-        sql = "SELECT name FROM sector"
-        return [row['name'] for row in self._select_rows(sql)]
-
-    def get_industries(self):
-        sql = "SELECT name FROM industry"
-        return [row['name'] for row in self._select_rows(sql)]
-
-    def get_index(self):
-        sql = 'SELECT industry.name AS industry, sector.name AS sector FROM '\
-            'industry JOIN sector ON (industry.sector_id = sector.sector_id)'
-        ret = {
-            'sectors': self.get_sectors(),
-            'industry_sectors': [(x['industry'], x['sector'])
-                                for x in self._select_rows(sql)]
-            }
-        sql = 'SELECT symbol, symbol.name AS name, sector.name AS sector, industry.name AS industry'\
-            ' FROM symbol JOIN industry ON (symbol.industry_id = industry.industry_id)'\
-            ' JOIN sector ON (industry.sector_id = sector.sector_id)'
-        ret['symbols'] = self._select_rows(sql)
-        return ret
+        self._db.delete_symbol(symbol)
 
     #def get_instrument(self, symbol):
         #sql = "SELECT %s FROM instrument WHERE symbol=?" % (
             #','.join(self._stats_columns)) # ['instrument.%s' % col for col in self._stats_columns]))
-        #row = self._select_row(sql, [symbol])
+        #row = self._db.select_row(sql, [symbol])
         #ret = dict((self._stats_columns[i], row[i]) for i in xrange(len(row)))
         #return ret
 
     #def get_instruments(self, symbols):
-        #rows = self._select_rows()
+        #rows = self._db.select_rows()
 
         #ret = [ dict((self._stats_columns[i], row[i]) \
             #for i in xrange(len(row))) for row in rows ]
