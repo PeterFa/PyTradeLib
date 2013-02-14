@@ -59,13 +59,22 @@ TradingWeek = TradingWeek()
 
 class Manager(object):
     def __init__(self):
-        self._db = db.Database()
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
         self.pidfile_path =  '/var/run/testdaemon/testdaemon.pid'
         self.pidfile_timeout = 5
+
+        self._db = db.Database()
         self.__historical_manager = historicalmanager.DataManager()
+
+        self.__historical_initialized_handler = \
+            self.__historical_manager.get_symbol_initialized_handler()
+        self.__historical_initialized_handler.subscribe(self.__historical_initialized)
+
+        self.__historical_updated_handler = \
+            self.__historical_manager.get_symbol_updated_handler()
+        self.__historical_updated_handler.subscribe(self.__historical_updated)
 
         self.__update_intervals = {
             'symbol_index': {'days': [TradingWeek.Monday], 'time': TradingWeek.MarketOpen},
@@ -74,43 +83,28 @@ class Manager(object):
             'historical': {'days': TradingWeek.Weekday, 'time': TradingWeek.MarketCloseHistorical},
             }
 
-        self.__historical_initialized_handler = \
-            self.__historical_manager.get_symbol_initialized_handler()
-        self.__historical_updated_handler = \
-            self.__historical_manager.get_symbol_updated_handler()
-
-        self.__historical_initialized_handler.subscribe(self.__historical_initialized)
-        self.__historical_updated_handler.subscribe(self.__historical_updated)
-
-        if os.path.exists(settings.DATA_LAST_UPDATED_PATH):
-            self.__last_updated = utils.load_from_json(settings.DATA_LAST_UPDATED_PATH)
-        else:
-            self.__last_updated = {
-                'symbol_index': {},
-                'historical_initialized': defaultdict(dict),
-                'historical': defaultdict(dict),
-                'key_stats': {},
-                }
-
     def run(self):
         while True:
             logger.debug('Debug Message')
             logger.info('Info Message')
             logger.warn('Warning')
             logger.error('Error')
-
             logger.info('sleeping for 10 seconds')
             time.sleep(10)
 
+    def index_initialized(self):
+        return True if self._db.get_updated('symbol_index') else False
+
     def index_updated(self):
-        return self._db.index_updated()
+        last_updated = self._db.get_updated('symbol_index')
 
     def update_index(self):
         if not self.index_updated():
-            self._update_index(index)
+            self._update_index()
 
-    def _update_index(self, index):
+    def _update_index(self):
         new_index = yql.SymbolIndex.get_data()
+        self._db.set_updated('symbol_index')
         all_new_symbols = [x['symbol'] for x in new_index['symbols']]
         all_existing_symbols = self._db.get_symbols()
         new_symbols = \
@@ -137,23 +131,23 @@ class Manager(object):
         self._db.insert_or_update_industries(index['industry_sectors'])
         self._db.insert_or_update_symbols(index['symbols'])
 
-    def historical_initialized(self, symbol, frequency):
-        return self.__last_updated['historical_initialized'][symbol].get(frequency, False)
+    #def historical_initialized(self, symbol, frequency):
+        #return self.__last_updated['historical_initialized'][symbol].get(frequency, False)
 
-    def historical_updated(self, symbol, frequency):
-        return self.__last_updated['historical_updated'][symbol].get(frequency, False)
+    #def historical_updated(self, symbol, frequency):
+        #return self.__last_updated['historical_updated'][symbol].get(frequency, False)
 
-    def __historical_initialized(self, symbol, frequency):
-        self.__last_updated['historical_initialized'][symbol][frequency] = True
+    #def __historical_initialized(self, symbol, frequency):
+        #self.__last_updated['historical_initialized'][symbol][frequency] = True
 
-    def __historical_updated(self, symbol, frequency):
-        self.__last_updated['historical_updated'][symbol][frequency] = True
+    #def __historical_updated(self, symbol, frequency):
+        #self.__last_updated['historical_updated'][symbol][frequency] = True
 
-    def key_stats_updated(self, symbol):
-        return self.__last_updated['key_stats_updated'].get(symbol, False)
+    #def key_stats_updated(self, symbol):
+        #return self.__last_updated['key_stats_updated'].get(symbol, False)
 
-    def __key_stats_updated(self, symbol):
-        self.__last_updated['key_stats_updated'][symbol] = True
+    #def __key_stats_updated(self, symbol):
+        #self.__last_updated['key_stats_updated'][symbol] = True
 
 if __name__ == '__main__':
     um = Manager()

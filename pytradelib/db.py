@@ -17,6 +17,7 @@
 
 import os
 import sqlite3
+import datetime
 
 from collections import OrderedDict
 from pytradelib import utils
@@ -47,7 +48,6 @@ class Database(object):
             ('industry_id', 'INTEGER REFERENCES industry (industry_id)'),
             ('exchange', 'TEXT'),
             ('ipo_date', 'TEXT'),
-            ('newest_date', 'TEXT'),
             ])
 
         self._stats_columns = OrderedDict([
@@ -75,6 +75,20 @@ class Database(object):
             ('short_ratio', 'REAL'),
             ])
 
+        self._system_updated_columns = OrderedDict([
+            ('update_id', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
+            ('symbol_index', 'TEXT'),
+            ])
+
+        self._symbol_updated_columns = OrderedDict([
+            ('symbol_id', 'INTEGER PRIMARY KEY REFERENCES symbol (symbol_id)'),
+            ('stats', 'TEXT'),
+            ('minute', 'TEXT'),
+            ('day', 'TEXT'),
+            ('week', 'TEXT'),
+            ('month', 'TEXT'),
+            ])
+
         if initialize:
             self._create_tables()
 
@@ -93,14 +107,17 @@ class Database(object):
         self.__create_table('industry', self._industry_columns)
         self.__create_table('symbol', self._symbol_columns)
         self.__create_table('stats', self._stats_columns)
+        self.__create_table('system_last_updated', self._system_updated_columns)
+        self.__create_table('symbol_last_updated', self._symbol_updated_columns)
 
     def __create_table(self, table_name, column_defs_dict):
         self._connection.execute("CREATE TABLE %s (%s)" % (table_name,
-            ','.join([' '.join(c) for c in column_defs_dict.items()])))
+            ','.join([' '.join(x) for x in column_defs_dict.items()])))
         self._connection.commit()
 
     def _select_row(self, sql, params=None):
-        return self._select_rows(sql, params)[0]
+        rows = self._select_rows(sql, params)
+        return rows[0] if rows else None
 
     def _select_rows(self, sql, params=None, include_none=True):
         cursor = self._connection.cursor()
@@ -175,8 +192,8 @@ class Database(object):
             assert(len(industry_sectors) == 2)
             industry_sectors = [industry_sectors]
         self.__insert_or_update('industry', [
-            { 'name': i, 'sector_id': self._get_sector_id(s)}
-            for i, s in industry_sectors
+            { 'name': x, 'sector_id': self._get_sector_id(y)}
+            for x, y in industry_sectors
             ])
 
     def insert_or_update_symbols(self, symbol_dicts):
@@ -205,7 +222,7 @@ class Database(object):
                     new_d[key] = d.pop(key)
             symbol_dicts.append(new_d)
         self.insert_or_update_symbols(symbol_dicts)
-        self.__insert_or_update('stats', stats, remove_keys=['sector', 'ipo_date', 'newest_date'])
+        self.__insert_or_update('stats', stats)
 
     def __insert_or_update(self, table_name, list_of_dicts, remove_keys=None):
         if remove_keys:
@@ -272,6 +289,31 @@ class Database(object):
             self._connection.execute(sql, (id_,))
         self._connection.commit()
 
+    def get_updated(self, what, symbol=None):
+        sql = 'SELECT %s FROM ' % what
+        if what in self._system_updated_columns:
+            sql += 'system_last_updated'
+            row = self._select_row(sql)
+        else:
+            if symbol is None:
+                raise Exception('must provide the symbol with "%s"' % what)
+            sql += 'symbol_last_updated WHERE symbol=?'
+            row = self._select_row(sql, (symbol,))
+        when = row[what]
+        return datetime.datetime.strptime(when, '%Y-%m-%d %H:%M:%S')
+
+    def set_updated(self, what, symbol=None, when=None):
+        if not when:
+            when = datetime.datetime.now() # FIXME: use UTC
+        when = when.strftime('%Y-%m-%d %H:%M:%S')
+        if what in self._system_updated_columns:
+            self.__insert_or_update('system_last_updated', [{what: when}])
+        else:
+            if symbol is None:
+                raise Exception('must provide the symbol with "%s"' % what)
+            self.__insert_or_update('symbol_last_updated',
+                [{'symbol': symbol, what: when}])
+
     def get_symbols(self):
         sql = "SELECT symbol FROM symbol"
         return [row['symbol'] for row in self._select_rows(sql)]
@@ -283,6 +325,20 @@ class Database(object):
     def get_industries(self):
         sql = "SELECT name FROM industry"
         return [row['name'] for row in self._select_rows(sql)]
+
+    def get_index(self):
+        sql = 'SELECT industry.name AS industry, sector.name AS sector FROM '\
+            'industry JOIN sector ON (industry.sector_id = sector.sector_id)'
+        ret = {
+            'sectors': self.get_sectors(),
+            'industry_sectors': [(x['industry'], x['sector'])
+                                for x in self._select_rows(sql)]
+            }
+        sql = 'SELECT symbol, symbol.name AS name, sector.name AS sector, industry.name AS industry'\
+            ' FROM symbol JOIN industry ON (symbol.industry_id = industry.industry_id)'\
+            ' JOIN sector ON (industry.sector_id = sector.sector_id)'
+        ret['symbols'] = self._select_rows(sql)
+        return ret
 
     #def get_instrument(self, symbol):
         #sql = "SELECT %s FROM instrument WHERE symbol=?" % (
