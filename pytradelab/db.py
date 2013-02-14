@@ -101,13 +101,28 @@ class Database(object):
     def _select_row(self, sql, params=None):
         return self._select_rows(sql, params)[0]
 
-    def _select_rows(self, sql, params=None):
+    def _select_rows(self, sql, params=None, include_none=True):
         cursor = self._connection.cursor()
         if params:
             cursor.execute(sql, params)
         else:
             cursor.execute(sql)
-        ret = [row for row in cursor]
+
+        # figure out the column names and order of selected results
+        sql_columns, junk, select_end = sql[len('SELECT '):].replace(
+            ' from ', 'FROM ').replace(' as ', ' AS ').partition(' FROM ')
+        if ' * ' in sql:
+            table_name = select_end.partition(' ')[0]
+            columns = self.__getattribute__('_%s_columns' % table_name).keys()
+        else:
+            columns = [x.partition(' AS ')[2].strip()
+                        if ' AS ' in x else x.strip()
+                        for x in sql_columns.split(',')]
+
+        # load the results into a list of dicts and return
+        ret = [dict([(x, row[i]) for i, x in enumerate(columns)
+                if row[i] or include_none])
+                for row in cursor]
         cursor.close()
         return ret
 
@@ -120,21 +135,23 @@ class Database(object):
     @utils.lower
     def _get_symbol_id(self, symbol):
         try:
-            return self._select_row(
-                "SELECT symbol_id FROM symbol WHERE symbol=?", (symbol,))[0]
+            sql = "SELECT symbol_id FROM symbol WHERE symbol=?"
+            return self._select_row(sql, (symbol,))['symbol_id']
         except IndexError:
-            ret = self._connection.execute(
-                'INSERT INTO symbol (symbol) VALUES (?)', (symbol,))
-            #self._connection.commit() # we should always be called by somebody who commits later
+            sql = 'INSERT INTO symbol (symbol) VALUES (?)'
+            ret = self._connection.execute(sql, (symbol,))
+            # FIXME: potential optimization: shouldn't _get_symbol_id always
+            # be called by somebody who will commit soon thereafter?
+            self._connection.commit()
             return ret.lastrowid
 
     def _get_sector_id(self, sector):
-        return self._select_row(
-            "SELECT sector_id FROM sector WHERE name=?", (sector,))[0]
+        sql = "SELECT sector_id FROM sector WHERE name=?"
+        return self._select_row(sql, (sector,))['sector_id']
 
     def _get_industry_id(self, industry):
-        return self._select_row(
-            "SELECT industry_id FROM industry WHERE name=?", (industry,))[0]
+        sql = "SELECT industry_id FROM industry WHERE name=?"
+        return self._select_row(sql, (industry,))['industry_id']
 
     def insert_or_update_sectors(self, sectors):
         ''' Save sectors to the db.
@@ -242,18 +259,24 @@ class Database(object):
                     )
         self._execute_many(sql, param_gen)
 
+    def get_symbols(self):
+        sql = "SELECT symbol FROM symbol"
+        return [row['symbol'] for row in self._select_rows(sql)]
+
     def get_sectors(self):
-        return self._select_row("SELECT name FROM sector")
+        sql = "SELECT name FROM sector"
+        return [row['name'] for row in self._select_rows(sql)]
 
     def get_industries(self):
-        return self._select_row("SELECT name FROM industry")
-    
-    def get_instrument(self, symbol):
-        sql = "SELECT %s FROM instrument WHERE symbol=?" % (
-            ','.join(self._stats_columns)) # ['instrument.%s' % col for col in self._stats_columns]))
-        row = self._select_row(sql, [symbol])
-        ret = dict((self._stats_columns[i], row[i]) for i in xrange(len(row)))
-        return ret
+        sql = "SELECT name FROM industry"
+        return [row['name'] for row in self._select_rows(sql)]
+
+    #def get_instrument(self, symbol):
+        #sql = "SELECT %s FROM instrument WHERE symbol=?" % (
+            #','.join(self._stats_columns)) # ['instrument.%s' % col for col in self._stats_columns]))
+        #row = self._select_row(sql, [symbol])
+        #ret = dict((self._stats_columns[i], row[i]) for i in xrange(len(row)))
+        #return ret
 
     #def get_instruments(self, symbols):
         #rows = self._select_rows()
