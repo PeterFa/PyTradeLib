@@ -36,39 +36,46 @@ class Factory(object):
     def __load_index(self):
         if not self.__update_manager.index_initialized():
             self.__update_manager.update_index()
-        return utils.load_from_json(settings.SYMBOL_INDEX_PATH)
+        # FIXME: figure out a better design than using UM's internal _db variable
+        index = self.__update_manager._db.get_index()
+        index['symbols'] = dict((x['symbol'], x) for x in index['symbols'])
+        index['industry_sectors'] = dict((x, y) for x, y in index['industry_sectors'])
+        index['sector_industries'] = dict((x, []) for x in index['sectors'])
+        for industry, sector in index['industry_sectors'].items():
+            index['sector_industries'][sector].append(industry)
+        return index
 
     def set_bar_filter(self, bar_filter):
         self.__historical_manager.set_bar_filter(bar_filter)
 
     def symbols(self):
-        return sorted(self.__index['all_symbols'].keys())
+        return sorted(self.__index['symbols'].keys())
 
     def sectors(self):
-        return sorted(self.__index['sector_industries'].keys())
+        return sorted(self.__index['sectors'])
 
     def industries(self):
-        return sorted(self.__index['industry_symbols'].keys())
+        return sorted(self.__index['industry_sectors'].keys())
 
     @utils.lower
     def get_instrument(self, symbol):
         if symbol not in self.__instruments:
             self.__instruments[symbol] = containers.Instrument(symbol,
-                self.__index['all_symbols'][symbol]['name'],
-                self.__index['all_symbols'][symbol]['sector'],
-                self.__index['all_symbols'][symbol]['industry'],
+                self.__index['symbols'][symbol]['name'],
+                self.__index['symbols'][symbol]['sector'],
+                self.__index['symbols'][symbol]['industry'],
                 self.__historical_manager)
         return self.__instruments[symbol]
 
     def get_instruments(self, symbols=None):
-        symbols = symbols or self.__index['all_symbols'].keys()
+        symbols = symbols or self.__index['symbols'].keys()
         ret = []
         for symbol in symbols:
             ret.append(self.get_instrument(symbol))
         return ret
 
     def get_watch_list(self, list_name, symbols=None):
-        symbols = symbols or self.__index['all_symbols'].keys()
+        symbols = symbols or self.__index['symbols'].keys()
         watch_list = containers.WatchList(list_name)
         for symbol in symbols:
             watch_list.add_instrument(self.get_instrument(symbol))
