@@ -27,7 +27,7 @@ class Database(object):
     def __init__(self, db_file_path=None):
         if db_file_path is None:
             db_file_path = os.path.join(settings.DATA_DIR, 'pytradelab.sqlite')
-        self._connect(db_file_path)
+        initialize = self._connect(db_file_path)
 
         self._sector_columns = OrderedDict([
             ('sector_id', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
@@ -75,6 +75,9 @@ class Database(object):
             ('short_ratio', 'REAL'),
             ])
 
+        if initialize:
+            self._create_tables()
+
     def _connect(self, db_file_path):
         initialize = False
         if not os.path.exists(db_file_path):
@@ -82,9 +85,8 @@ class Database(object):
             initialize = True
         self._connection = sqlite3.connect(db_file_path)
         self._connection.text_factory=str # FIXME: use unicode
-        if initialize:
-            self._create_tables()
-    
+        return initialize
+
     def _create_tables(self):
         self.__create_table('sector', self._sector_columns)
         self.__create_table('industry', self._industry_columns)
@@ -94,6 +96,7 @@ class Database(object):
     def __create_table(self, table_name, column_defs_dict):
         self._connection.execute("CREATE TABLE %s (%s)" % (table_name,
             ','.join([' '.join(c) for c in column_defs_dict.items()])))
+        self._connection.commit()
 
     def _select_row(self, sql, params=None):
         return self._select_rows(sql, params)[0]
@@ -146,11 +149,13 @@ class Database(object):
     def insert_or_update_industries(self, industry_sectors):
         ''' Save industries to the db.
 
-        :param industry_sectors: A dict with industry-name keys and sector-name values
-        :type industry_sectors: {'industry names': 'sector names'}
+        :param industry_sectors: A tuple('industry name', 'sector name') pair or a list of them
+        :type industry_sectors: ('industry names', 'sector names') or list[tuples]
         '''
-        if not isinstance(industry_sectors, dict):
-            industry_sectors = dict(industry_sectors)
+        if not isinstance(industry_sectors, list):
+            assert(isinstance(industry_sectors, tuple))
+            assert(len(industry_sectors) == 2)
+            industry_sectors = [industry_sectors]
         self.__insert_or_update('industry', [
             { 'name': i, 'sector_id': self._get_sector_id(s)}
             for i, s in industry_sectors
@@ -159,11 +164,12 @@ class Database(object):
     def insert_or_update_symbols(self, symbol_dicts):
         ''' Save symbols to the db.
 
-        :param symbol_dicts: Required: symbol. Optional: name, industry, exchange, ipo_date, newest_date
-        :type symbol_dicts: {'symbols': {keys: symbol, [any optional keys]}}
+        :param symbol_dicts: dict or list of dicts. Required Keys: symbol. Optional: name, industry, exchange, ipo_date, newest_date
+        :type symbol_dicts: [{keys: symbol, [any optional keys]}]
         '''
-        if not isinstance(symbol_dicts, dict):
-            symbol_dicts = dict(symbol_dicts)
+        if not isinstance(symbol_dicts, list):
+            assert(isinstance(symbol_dicts, dict))
+            symbol_dicts = [symbol_dicts]
         d = symbol_dicts[0]
         for d in symbol_dicts:
             d['symbol'] = d['symbol'].lower()
