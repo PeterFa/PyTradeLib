@@ -37,8 +37,8 @@ Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
         \
         V
     file_path(s) -> file_open -> file_to_rows_reader -> row_filter -> parser/drain 
-                                                                        \
-    Return values from DataManager.get_X_bars():                   V
+                                                                        |
+    Return values from DataManager.get_X_bars():                        V
                             for Instrument --------------> [list of bar.Bar]
                             for Instruments --> {"symbol": [list of bar.Bar]}
 
