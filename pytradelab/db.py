@@ -126,23 +126,37 @@ class Database(object):
         return self._select_row(
             "SELECT industry_id FROM industry WHERE name=?", (industry,))[0]
 
-    def insert_or_update_sector(self, sector):
-        self.insert_or_update_sectors([sector])
-
     def insert_or_update_sectors(self, sectors):
+        ''' Save sectors to the db.
+
+        :param sectors: A sector name or list of sector names.
+        :type sectors: string or list of strings
+        '''
+        if not isinstance(sectors, list):
+            sectors = [sectors]
         self.__insert_or_update('sector', [{'name': s} for s in sectors])
 
-    def insert_or_update_industry(self, sector, industry):
-        self.insert_or_update_industries({industry: sector})
-
     def insert_or_update_industries(self, industry_sectors):
-        self.__insert_or_update('industry',
-            [{ 'name': i, 'sector_id': self._get_sector_id(s)} for i, s in industry_sectors])
+        ''' Save industries to the db.
 
-    def insert_or_update_symbol(self, symbol, name, industry):
-        self.insert_or_update_symbols([{'symbol': symbol, 'name': name, 'industry': industry}])
+        :param industry_sectors: A dict with industry-name keys and sector-name values
+        :type industry_sectors: {'industry names': 'sector names'}
+        '''
+        if not isinstance(industry_sectors, dict):
+            industry_sectors = dict(industry_sectors)
+        self.__insert_or_update('industry', [
+            { 'name': i, 'sector_id': self._get_sector_id(s)}
+            for i, s in industry_sectors
+            ])
 
     def insert_or_update_symbols(self, symbol_dicts):
+        ''' Save symbols to the db.
+
+        :param symbol_dicts: Required: symbol. Optional: name, industry, exchange, ipo_date, newest_date
+        :type symbol_dicts: {'symbols': {keys: symbol, [any optional keys]}}
+        '''
+        if not isinstance(symbol_dicts, dict):
+            symbol_dicts = dict(symbol_dicts)
         d = symbol_dicts[0]
         if 'industry' in d:
             for d in symbol_dicts:
