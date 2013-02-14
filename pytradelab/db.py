@@ -114,9 +114,16 @@ class Database(object):
         self._connection.commit()
         cursor.close()
 
+    @utils.lower
     def _get_symbol_id(self, symbol):
-        return self._select_row(
-            "SELECT symbol_id FROM symbol WHERE symbol=?", (symbol,))[0]
+        try:
+            return self._select_row(
+                "SELECT symbol_id FROM symbol WHERE symbol=?", (symbol,))[0]
+        except IndexError:
+            ret = self._connection.execute(
+                'INSERT INTO symbol (symbol) VALUES (?)', (symbol,))
+            #self._connection.commit() # we should always be called by somebody who commits later
+            return ret.lastrowid
 
     def _get_sector_id(self, sector):
         return self._select_row(
@@ -158,8 +165,9 @@ class Database(object):
         if not isinstance(symbol_dicts, dict):
             symbol_dicts = dict(symbol_dicts)
         d = symbol_dicts[0]
-        if 'industry' in d:
-            for d in symbol_dicts:
+        for d in symbol_dicts:
+            d['symbol'] = d['symbol'].lower()
+            if 'industry' in d:
                 d['industry_id'] = self._get_industry_id(d.pop('industry'))
         self.__insert_or_update('symbol', symbol_dicts, remove_keys=['sector'])
 
@@ -167,6 +175,7 @@ class Database(object):
         # some of the keys in stats belong in the symbol table; separate them here.
         symbol_dicts = []
         for d in stats:
+            d['symbol'] = d['symbol'].lower()
             new_d = {'symbol': d['symbol']}
             for key in ['name', 'industry', 'exchange']:
                 if key in d:
