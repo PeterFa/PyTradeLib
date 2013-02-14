@@ -2,11 +2,14 @@ PyTradeLab
 ==========
 
 PyTradeLab is a python library for managing instrument data, screening and
-backtesting. It stands on the shoulders of giants:
-Gabriel Martin Becedillas Ruiz, for authoring the original PyAlgoTrade
-John Benediktsson, for authoring the talib wrapper and helping me extensively
-And of course the authors of the original TA-Lib, zipline, and the entire SciPy
-community for all of the excellent tools and documentation!
+backtesting.
+
+### Thanks To:
+- Gabriel Martin Becedillas Ruiz, for authoring the original PyAlgoTrade  
+- John Benediktsson, for authoring the talib wrapper and helping me extensively  
+- The authors of the original TA-Lib, zipline, and the entire SciPy community
+  for all of the excellent tools and documentation!  
+- And, well, the internet.  
 
 ### So what's different?
 - The entire API is a more pythonic lower_cased_api.  
