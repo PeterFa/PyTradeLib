@@ -31,22 +31,31 @@ from pytradelib import historicalmanager
 from pytradelib.failed import Symbols as FailedSymbols
 from pytradelib.dataproviders.yahoo import yql
 
-class TradingWeek:
+class Month(object):
+    Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec = range(1, 13)
+
+    def get_days(self, month, year):
+        if month == self.Feb:
+            try:
+                return datetime.date(year, month, 29).day
+            except ValueError:
+                return 28
+        elif month in [self.Apr, self.Jun, self.Sep, self.Nov]:
+            return 30
+        else:
+            return 31
+
+Month = Month()
+
+class TradingWeek(object):
     MarketOpen = datetime.time(9, 29) # hopefully our system clock's time is within a minute of Yahoo's.....
     MarketClose = datetime.time(16, 5) # accomodate any possible lag in EOD updates
     MarketCloseHistorical = datetime.time(20, 15) # Yahoo doesn't seem to update their EOD data until ~8PM EST
 
-    Monday = 0
-    Tuesday = 1
-    Wednesday = 2
-    Thursday = 3
-    Friday = 4
-    Saturday = 5
-    Sunday = 6
-
+    Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday = range(0, 7)
     Weekday = [0, 1, 2, 3, 4]
     Weekend = [5, 6]
-    
+
     def market_open(self, date_time_now):
         if date_time_now.weekday() in self.Weekday:
             if self.MarketOpen < date_time_now.time() \
@@ -70,11 +79,11 @@ class Manager(object):
 
         self.__historical_initialized_handler = \
             self.__historical_manager.get_symbol_initialized_handler()
-        self.__historical_initialized_handler.subscribe(self.__historical_initialized)
+        #self.__historical_initialized_handler.subscribe(self.__historical_initialized)
 
         self.__historical_updated_handler = \
             self.__historical_manager.get_symbol_updated_handler()
-        self.__historical_updated_handler.subscribe(self.__historical_updated)
+        #self.__historical_updated_handler.subscribe(self.__historical_updated)
 
         self.__update_intervals = {
             'symbol_index': {'days': [TradingWeek.Monday], 'time': TradingWeek.MarketOpen},
@@ -97,6 +106,28 @@ class Manager(object):
 
     def index_updated(self):
         last_updated = self._db.get_updated('symbol_index')
+        if not last_updated:
+            return False
+        update_day = self.__update_intervals['symbol_index']['days'][0]
+        update_time = self.__update_intervals['symbol_index']['time']
+        update_date = datetime.datetime.today()
+        while(update_date.weekday() > update_day): # this relies on update_day = 0
+            day = update_date.day - 1
+            month = update_date.month
+            year = update_date.year
+            if day < 1:
+                month -= 1
+                if month < 1:
+                    month = 12
+                    year -= 1
+                day = Month.get_days(month, year)
+            update_date = datetime.date(year, month, day)
+            if update_date.weekday() == update_day:
+                break
+        update_date_time = datetime.datetime.combine(update_date, update_time)
+        if last_updated < update_date_time:
+            return False
+        return True
 
     def update_index(self):
         if not self.index_updated():
