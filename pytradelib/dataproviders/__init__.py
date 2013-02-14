@@ -18,8 +18,8 @@
 import os
 
 from pytradelib import utils
+from pytradelib import barfeed
 from pytradelib.failed import Symbols as FailedSymbols
-from pytradelib.barfeed import csvfeed
 
 
 ## ----- Data Provider Base Class (to be subclassed by data providers) ----------
@@ -56,7 +56,7 @@ class Provider(object):
                 bars.append(bar_)
 
             # check if we should add the bar when using a DateRangeFilter
-            elif isinstance(self.__bar_filter, csvfeed.DateRangeFilter):
+            elif isinstance(self.__bar_filter, barfeed.DateRangeFilter):
                 if self.__bar_filter.includeBar(bar_):
                     bars.append(bar_)
                 # make sure we've gotten to the start of the date range before breaking
