@@ -19,8 +19,8 @@
 """
 
 import unittest
-from pytradelab import technical
-from pytradelab import dataseries
+from pytradelib import technical
+from pytradelib import dataseries
 
 class CacheTest(unittest.TestCase):
     def testCacheSize1(self):

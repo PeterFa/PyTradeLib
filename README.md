@@ -1,10 +1,10 @@
-PyTradeLab
+PyTradeLib
 ==========
 
-PyTradeLab is a python library for managing instrument data, screening and
+PyTradeLib is a python library for managing instrument data, screening and
 backtesting.
 
-### Thanks To:
+### Thanks and Acknowledgements
 - Gabriel Martin Becedillas Ruiz, for authoring the original PyAlgoTrade  
 - John Benediktsson, for authoring the talib wrapper and helping me extensively  
 - The authors of the original TA-Lib, zipline, and the entire SciPy community
@@ -32,7 +32,6 @@ backtesting.
 - Convert testing to nosetests.  
 - Convert underlying data structures to numpy arrays for better performance,
   memory usage and integration with talib.  
-- Add a super-pre-alpha GUI app for charting and plotting Strategies.  
 - Work on improving local multiprocessing optimizer.  
 - Then work on improving local network/multi-system multiprocessing optimizer.  
 
@@ -51,11 +50,10 @@ Installing
 [gevent](http://www.gevent.org/) [TODO: replace with something that supports Windows?]  
 [lz4](https://github.com/steeve/python-lz4) [TODO: make optional]  
 [decorator](http://pypi.python.org/pypi/decorator)  
-[PyQt4](http://www.riverbankcomputing.com/software/pyqt/download) [Will be required for GUI charting app]  
 
-### Install PyTradeLab:
+### Install PyTradeLib:
 ```
-$ git clone git://github.com/briancappello/PyTradeLab.git  
-$ cd PyTradeLab  
+$ git clone git://github.com/briancappello/PyTradeLib.git  
+$ cd PyTradeLib  
 $ sudo python setup.py install
 ```

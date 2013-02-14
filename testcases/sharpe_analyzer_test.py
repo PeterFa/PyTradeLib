@@ -18,10 +18,10 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pytradelab.barfeed import yahoofeed
-from pytradelab.stratanalyzer import sharpe
-from pytradelab.broker import backtesting
-from pytradelab import broker
+from pytradelib.barfeed import yahoofeed
+from pytradelib.stratanalyzer import sharpe
+from pytradelib.broker import backtesting
+from pytradelib import broker
 
 import strategy_test
 import common

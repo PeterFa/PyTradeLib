@@ -18,10 +18,10 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pytradelab.barfeed import yahoofeed
-from pytradelab.talibext import indicator
-from pytradelab import bar
-from pytradelab import dataseries
+from pytradelib.barfeed import yahoofeed
+from pytradelib.talibext import indicator
+from pytradelib import bar
+from pytradelib import dataseries
 import common
 
 import datetime

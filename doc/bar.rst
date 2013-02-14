@@ -1,7 +1,7 @@
 bar -- Instrument prices
 ========================
 
-.. automodule:: pytradelab.bar
+.. automodule:: pytradelib.bar
     :members:
     :member-order: bysource
     :special-members:

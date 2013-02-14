@@ -18,7 +18,7 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pytradelab.utils import stats
+from pytradelib.utils import stats
 
 import unittest
 import math

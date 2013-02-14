@@ -18,12 +18,12 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pytradelab import barfeed
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import membf
-from pytradelab.stratanalyzer import drawdown
-from pytradelab import broker
-from pytradelab import bar
+from pytradelib import barfeed
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import membf
+from pytradelib.stratanalyzer import drawdown
+from pytradelib import broker
+from pytradelib import bar
 
 import strategy_test
 import common

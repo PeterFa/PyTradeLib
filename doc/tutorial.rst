@@ -1,16 +1,16 @@
 Tutorial
 ========
 
-The goal of this tutorial is to give you a quick introduction to PyTradeLab.
-As described in the introduction, the goal of PyTradeLab is to help you backtest stock trading strategies.
+The goal of this tutorial is to give you a quick introduction to PyTradeLib.
+As described in the introduction, the goal of PyTradeLib is to help you backtest stock trading strategies.
 Let's say you have an idea for a trading strategy and you'd like to evaluate it with historical data and see how it behaves,
-then PyTradeLab should allow you to do so with minimal effort.
+then PyTradeLib should allow you to do so with minimal effort.
 
 Before I move on I would like to thank Pablo Jorge who helped reviewing the design and documentation.
 
 **This tutorial was developed on a UNIX environment, but the steps to adapt it to a Windows environment should be straightforward.**
 
-The PyTradeLab library has 4 main components:
+The PyTradeLib library has 4 main components:
 
  * Strategies
  * Technicals
@@ -35,7 +35,7 @@ Optimizer
 Having said all that, the first thing that we'll need to test our strategy is some data.
 Let's use Oracle's stock prices for year 2000, which we'll download with the following command: ::
 
-    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)"
+    python -c "from pytradelib.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)"
 
 The output should look like this: ::
 
@@ -48,10 +48,10 @@ The output should look like this: ::
     2000-01-04,115.50,118.62,105.00,107.69,116850000,26.26
     2000-01-03,124.62,125.19,111.62,118.12,98122000,28.81
 
-The pytradelab.tools.yahoofinance package downloads CSV formatted data from Yahoo! Finance. 
+The pytradelib.tools.yahoofinance package downloads CSV formatted data from Yahoo! Finance. 
 Let's save that as orcl-2000.csv with the following command: ::
 
-    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)" > orcl-2000.csv
+    python -c "from pytradelib.deprecated import yahoofinance; print yahoofinance.get_daily_csv('orcl', 2000)" > orcl-2000.csv
 
 Let's start with a simple strategy, that is, one that just prints closing prices as they are processed:
 
@@ -155,9 +155,9 @@ Long story short, **we need to go parallel**.
 
 Let's start by downloading 3 years of daily bars for 'Dow Jones Industrial Average': ::
 
-    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2009)" > dia-2009.csv
-    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2010)" > dia-2010.csv
-    python -c "from pytradelab.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2011)" > dia-2011.csv
+    python -c "from pytradelib.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2009)" > dia-2009.csv
+    python -c "from pytradelib.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2010)" > dia-2010.csv
+    python -c "from pytradelib.deprecated import yahoofinance; print yahoofinance.get_daily_csv('dia', 2011)" > dia-2011.csv
 
 This is the server script:
 
@@ -176,7 +176,7 @@ This is the worker script:
 The worker code is doing 2 things:
 
  1. Declaring the RSI2 strategy.
- 2. Using pytradelab.optimizer.worker module to run the strategy in parallel with the data supplied by the server.
+ 2. Using pytradelib.optimizer.worker module to run the strategy in parallel with the data supplied by the server.
 
 
 When you run the server and the client/s you'll see something like this on the server console: ::
@@ -211,7 +211,7 @@ and something like this on the worker/s console: ::
 
 Note that you should run **only one server and one or more workers in different computers**.
 
-If you just want to run strategies in parallel in your own desktop you can take advantage of the pytradelab.optimizer.local
+If you just want to run strategies in parallel in your own desktop you can take advantage of the pytradelib.optimizer.local
 module like this:
 
 .. literalinclude:: ../samples/tutorial-optimizer-local.py
@@ -221,7 +221,7 @@ The code is doing 4 things:
  1. Declaring the RSI2 strategy.
  2. Declaring a generator function that builds parameters.
  3. Loading the feed with the CSV files we downloaded.
- 4. Using the pytradelab.optimizer.local module to run the strategy in parallel and find the best result.
+ 4. Using the pytradelib.optimizer.local module to run the strategy in parallel and find the best result.
 
 When you run this code you should see something like this: ::
 
@@ -261,7 +261,7 @@ If you don't have access to a cluster of computers, then you can take advantage 
 Plotting
 --------
 
-PyTradeLab makes it very easy to plot a strategy execution.
+PyTradeLib makes it very easy to plot a strategy execution.
 Save this SMA crossover strategy as smacross_strategy.py:
 
 .. literalinclude:: ../samples/smacross_strategy.py
@@ -280,6 +280,6 @@ This is what the plot looks like:
 
 .. image:: ../samples/tutorial-5.png
 
-I hope you enjoyed this quick introduction. I'd recommend you to download PyTradeLab here: http://gbeced.github.com/pytradelab/downloads/index.html
+I hope you enjoyed this quick introduction. I'd recommend you to download PyTradeLib here: http://gbeced.github.com/pytradelib/downloads/index.html
 and get started writing you own strategies.
 

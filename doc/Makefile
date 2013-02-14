@@ -80,17 +80,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/PyTradeLab.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/PyTradeLib.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/PyTradeLab.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/PyTradeLib.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/PyTradeLab"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/PyTradeLab"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/PyTradeLib"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/PyTradeLib"
 	@echo "# devhelp"
 
 epub:

@@ -1,4 +1,4 @@
-from pytradelab import dataseries
+from pytradelib import dataseries
 
 # Build a sequence based DataSeries.
 ds = dataseries.SequenceDataSeries(range(0, 50))

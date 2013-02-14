@@ -1,6 +1,6 @@
-from pytradelab import plotter
-from pytradelab.barfeed import yahoofeed
-from pytradelab.stratanalyzer import returns
+from pytradelib import plotter
+from pytradelib.barfeed import yahoofeed
+from pytradelib.stratanalyzer import returns
 import smacross_strategy
 
 

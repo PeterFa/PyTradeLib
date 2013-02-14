@@ -21,11 +21,11 @@
 import unittest
 import os
 
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import sqlitefeed
-from pytradelab import bar
-from pytradelab import barfeed
-from pytradelab import marketsession
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import sqlitefeed
+from pytradelib import bar
+from pytradelib import barfeed
+from pytradelib import marketsession
 import common
 
 class TemporarySQLiteFeed:

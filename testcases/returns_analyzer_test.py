@@ -18,10 +18,10 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import csvfeed
-from pytradelab.stratanalyzer import returns
-from pytradelab import broker
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import csvfeed
+from pytradelib.stratanalyzer import returns
+from pytradelib import broker
 
 import strategy_test
 import common

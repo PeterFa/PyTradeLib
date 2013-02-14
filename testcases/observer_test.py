@@ -20,7 +20,7 @@
 
 import unittest
 
-from pytradelab import observer
+from pytradelib import observer
 
 class ObserverTestCase(unittest.TestCase):
     def testEmitOrder(self):

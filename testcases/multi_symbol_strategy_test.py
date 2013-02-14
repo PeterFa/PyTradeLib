@@ -20,14 +20,14 @@
 
 import unittest
 
-from pytradelab import bar
-from pytradelab import barfeed
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import sqlitefeed
-from pytradelab import marketsession
-from pytradelab import strategy
-from pytradelab.technical import ma
-from pytradelab.technical import cross
+from pytradelib import bar
+from pytradelib import barfeed
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import sqlitefeed
+from pytradelib import marketsession
+from pytradelib import strategy
+from pytradelib.technical import ma
+from pytradelib.technical import cross
 import common
 
 class NikkeiSpyStrategy(strategy.Strategy):

@@ -2,13 +2,13 @@ import csv
 import datetime
 import os
 
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import csvfeed
-from pytradelab import strategy
-from pytradelab import broker
-from pytradelab.utils import stats
-from pytradelab.stratanalyzer import returns
-from pytradelab.stratanalyzer import sharpe
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import csvfeed
+from pytradelib import strategy
+from pytradelib import broker
+from pytradelib.utils import stats
+from pytradelib.stratanalyzer import returns
+from pytradelib.stratanalyzer import sharpe
 
 class OrdersFile:
     def __init__(self, ordersFile):

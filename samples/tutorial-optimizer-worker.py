@@ -1,7 +1,7 @@
-from pytradelab.optimizer import worker
-from pytradelab import strategy
-from pytradelab.technical import ma
-from pytradelab.technical import rsi
+from pytradelib.optimizer import worker
+from pytradelib import strategy
+from pytradelib.technical import ma
+from pytradelib.technical import rsi
 
 class MyStrategy(strategy.Strategy):
     def __init__(self, feed, entrySMA, exitSMA, rsiPeriod, overBoughtThreshold, overSoldThreshold):

@@ -1,6 +1,6 @@
 marketsession -- Market sessions
 ================================
 
-.. automodule:: pytradelab.marketsession
+.. automodule:: pytradelib.marketsession
     :members:
     :member-order: bysource

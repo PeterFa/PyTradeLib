@@ -1,7 +1,7 @@
 dataseries -- Basic dataseries classes
 ======================================
 
-.. automodule:: pytradelab.dataseries
+.. automodule:: pytradelib.dataseries
     :members: DataSeries, SequenceDataSeries, BarDataSeries
     :special-members:
 

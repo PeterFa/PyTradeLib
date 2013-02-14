@@ -1,9 +1,9 @@
-.. PyTradeLab documentation master file, created by
+.. PyTradeLib documentation master file, created by
    sphinx-quickstart on Fri Nov  4 21:48:31 2011.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-PyTradeLab documentation
+PyTradeLib documentation
 =========================
 
 Contents:

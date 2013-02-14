@@ -21,8 +21,8 @@
 import unittest
 import datetime
 
-from pytradelab import dataseries
-from pytradelab import bar
+from pytradelib import dataseries
+from pytradelib import bar
 
 class TestSequenceDataSeries(unittest.TestCase):
     def testEmpty(self):

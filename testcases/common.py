@@ -21,7 +21,7 @@
 import csv
 import os
 
-from pytradelab import dataseries
+from pytradelib import dataseries
 
 def load_test_csv(path):
     inputSeq = []

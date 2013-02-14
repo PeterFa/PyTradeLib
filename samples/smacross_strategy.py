@@ -1,6 +1,6 @@
-from pytradelab import strategy
-from pytradelab.technical import ma
-from pytradelab.technical import cross
+from pytradelib import strategy
+from pytradelib.technical import ma
+from pytradelib.technical import cross
 
 class Strategy(strategy.Strategy):
     def __init__(self, feed, smaPeriod):

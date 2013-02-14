@@ -21,11 +21,11 @@
 import unittest
 import datetime
 
-from pytradelab.barfeed import csvfeed
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import ninjatraderfeed
-from pytradelab.utils import dt
-from pytradelab import marketsession
+from pytradelib.barfeed import csvfeed
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import ninjatraderfeed
+from pytradelib.utils import dt
+from pytradelib import marketsession
 import common
 
 class BarFeedEventHandler_TestLoadOrder:

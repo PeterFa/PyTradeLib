@@ -1,8 +1,8 @@
-from pytradelab.barfeed import yahoofeed
-from pytradelab.stratanalyzer import returns
-from pytradelab.stratanalyzer import sharpe
-from pytradelab.stratanalyzer import drawdown
-from pytradelab.stratanalyzer import trades
+from pytradelib.barfeed import yahoofeed
+from pytradelib.stratanalyzer import returns
+from pytradelib.stratanalyzer import sharpe
+from pytradelib.stratanalyzer import drawdown
+from pytradelib.stratanalyzer import trades
 import smacross_strategy
 
 # Load the yahoo feed from the CSV file

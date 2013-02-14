@@ -25,16 +25,15 @@ import Queue
 import time
 import pytz
 
-from pytradelab import bar
-from pytradelab import strategy
-from pytradelab import barfeed
-from pytradelab import broker
-from pytradelab.broker import backtesting
-from pytradelab.barfeed import csvfeed
-from pytradelab.barfeed import yahoofeed
-from pytradelab.barfeed import ninjatraderfeed
-from pytradelab.utils import dt
-from pytradelab import marketsession
+from pytradelib import bar
+from pytradelib import strategy
+from pytradelib import barfeed
+from pytradelib import broker
+from pytradelib.broker import backtesting
+from pytradelib.barfeed import yahoofeed
+from pytradelib.barfeed import ninjatraderfeed
+from pytradelib.utils import dt
+from pytradelib import marketsession
 import common
 
 def us_equities_datetime(*params):
@@ -299,7 +298,7 @@ class StrategyTestCase(unittest.TestCase):
         to_month=1
         from_day=3
         to_day=3
-        bar_filter = csvfeed.USEquitiesRTH(us_equities_datetime(2011, from_month, from_day, 00, 00), us_equities_datetime(2011, to_month, to_day, 23, 59))
+        bar_filter = barfeed.USEquitiesRTH(us_equities_datetime(2011, from_month, from_day, 00, 00), us_equities_datetime(2011, to_month, to_day, 23, 59))
         bar_feed = ninjatraderfeed.Feed(bar.Frequency.MINUTE)
         bar_feed.set_bar_filter(bar_filter)
         bar_feed.add_bars_from_csv(StrategyTestCase.TestInstrument, common.get_data_file_path("nt-spy-minute-2011.csv"))

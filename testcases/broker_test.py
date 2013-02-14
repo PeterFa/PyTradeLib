@@ -21,10 +21,10 @@
 import unittest
 import datetime
 
-from pytradelab import broker
-from pytradelab.broker import backtesting
-from pytradelab import bar
-from pytradelab import barfeed
+from pytradelib import broker
+from pytradelib.broker import backtesting
+from pytradelib import bar
+from pytradelib import barfeed
 
 class Callback:
     def __init__(self):

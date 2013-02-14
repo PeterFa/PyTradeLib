@@ -1,8 +1,8 @@
-<-------------------------------- PyTradeLab ---------------------------------->
+<-------------------------------- PyTradeLib ---------------------------------->
 
 Version 0.0.1
 - [CHANGE] Switch from camelCasedAPIs to pythonic_lower_cased_apis
-- [CHANGE] Switch from Apache License v2.0 to LGPL v3.0 for all new PyTradeLab code
+- [CHANGE] Switch from Apache License v2.0 to LGPL v3.0 for all new PyTradeLib code
 - [CHANGE] Drop homegrown indicators in favor of using talib directly
 
 

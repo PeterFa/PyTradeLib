@@ -20,10 +20,10 @@
 
 import unittest
 
-from pytradelab import strategy
-from pytradelab.barfeed import yahoofeed
-from pytradelab.technical import ma
-from pytradelab.technical import cross
+from pytradelib import strategy
+from pytradelib.barfeed import yahoofeed
+from pytradelib.technical import ma
+from pytradelib.technical import cross
 import common
 
 class SMACrossOverStrategy(strategy.Strategy):

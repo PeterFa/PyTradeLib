@@ -3,27 +3,27 @@ stratanalyzer -- Strategy analyzers
 
 Strategy analyzers provide an extensible way to attach different calculations to strategy executions.
 
-.. automodule:: pytradelab.stratanalyzer
+.. automodule:: pytradelib.stratanalyzer
     :members: StrategyAnalyzer
 
 Returns
 -------
-.. automodule:: pytradelab.stratanalyzer.returns
+.. automodule:: pytradelib.stratanalyzer.returns
     :members: Returns
 
 Sharpe Ratio
 ------------
-.. automodule:: pytradelab.stratanalyzer.sharpe
+.. automodule:: pytradelib.stratanalyzer.sharpe
     :members: SharpeRatio
 
 DrawDown
 --------
-.. automodule:: pytradelab.stratanalyzer.drawdown
+.. automodule:: pytradelib.stratanalyzer.drawdown
     :members: DrawDown
 
 Trades
 ------
-.. automodule:: pytradelab.stratanalyzer.trades
+.. automodule:: pytradelib.stratanalyzer.trades
     :members: Trades
     :member-order: bysource
 

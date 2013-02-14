@@ -1,6 +1,6 @@
-from pytradelab import strategy
-from pytradelab.barfeed import yahoofeed
-from pytradelab.technical import ma
+from pytradelib import strategy
+from pytradelib.barfeed import yahoofeed
+from pytradelib.technical import ma
 
 class MyStrategy(strategy.Strategy):
     def __init__(self, feed):

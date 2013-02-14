@@ -1,5 +1,5 @@
-from pytradelab import strategy
-from pytradelab.barfeed import yahoofeed
+from pytradelib import strategy
+from pytradelib.barfeed import yahoofeed
 
 class MyStrategy(strategy.Strategy):
     def __init__(self, feed):

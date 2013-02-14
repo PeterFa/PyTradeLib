@@ -1,9 +1,9 @@
 import itertools
-from pytradelab.optimizer import local
-from pytradelab.barfeed import yahoofeed
-from pytradelab import strategy
-from pytradelab.technical import ma
-from pytradelab.technical import rsi
+from pytradelib.optimizer import local
+from pytradelib.barfeed import yahoofeed
+from pytradelib import strategy
+from pytradelib.technical import ma
+from pytradelib.technical import rsi
 
 class MyStrategy(strategy.Strategy):
     def __init__(self, feed, entrySMA, exitSMA, rsiPeriod, overBoughtThreshold, overSoldThreshold):

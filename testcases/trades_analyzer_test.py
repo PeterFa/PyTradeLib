@@ -18,11 +18,11 @@
 .. moduleauthor:: Gabriel Martin Becedillas Ruiz <gabriel.becedillas@gmail.com>
 """
 
-from pytradelab.barfeed import ninjatraderfeed
-from pytradelab.barfeed import csvfeed
-from pytradelab.stratanalyzer import trades
-from pytradelab import broker
-from pytradelab.broker import backtesting
+from pytradelib.barfeed import ninjatraderfeed
+from pytradelib.barfeed import csvfeed
+from pytradelib.stratanalyzer import trades
+from pytradelib import broker
+from pytradelib.broker import backtesting
 
 import strategy_test
 import common
