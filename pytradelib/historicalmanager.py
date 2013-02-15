@@ -65,6 +65,18 @@ def symbol_rows(symbol_files):
         csv_rows = data.strip().split('\n')[1:]
         yield (symbol, csv_rows)
 
+def convert_data_file_paths(data_file_paths, from_provider, to_provider):
+    for data, file_path in data_file_paths:
+        symbol = utils.symbol_from_file_path(file_path)
+        frequency = utils.frequency_from_file_path(file_path)
+        new_file_path = to_provider.get_file_path(symbol, frequency)
+        rows = data.strip().split('\n')
+        header = rows.pop(0)
+        symbol, bars = from_provider.rows_to_bars(symbol, rows, frequency)
+        symbol, formatted_rows = to_provider.bars_to_rows(symbol, bars, frequency)
+        formatted_rows.insert(0, to_provider.get_csv_column_labels(frequency))
+        yield ('\n'.join(formatted_rows), new_file_path)
+
 # FIXME: For the next 3 functions, we still read the entire file by calling symbol_rows().
 # How much is gained by reading only the first/last few lines of the file?
 def newest_and_oldest_symbol_rows(symbol_files):
@@ -377,13 +389,19 @@ class DataUpdater(object):
 
         for urls in utils.batch(url_file_paths, size=batch_size, sleep=sleep):
             # pipeline for downloading data, processing it, and opening the storage files
-            data_files = open_files_function(
-                self.__provider.process_downloaded_data(
-                    self.__provider.verify_downloaded_data(utils.bulk_download(urls)),
-                    frequency) )
+            data_file_paths = self._data_downloader.process_downloaded_data(
+                self._data_downloader.verify_downloaded_data(
+                    utils.bulk_download(urls)), frequency)
+
+            # convert downloaded format into storage format if necessary
+            if self._downloader_format != self._writer_format:
+                data_file_paths = convert_data_file_paths(data_file_paths,
+                    self._data_downloader, self._data_writer)
 
             # pipeline for saving/updating downloaded data to the storage files
-            for symbol in write_data(process_data_update_function(data_files)):
+            for symbol in write_data(process_data_update_function(
+                open_files_function(data_file_paths))
+            ):
                 if display_progress:
                     current_idx += 1
                     pct = int( current_idx / (total_len + 1.0) * 100.0 )

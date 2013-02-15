@@ -80,7 +80,7 @@ class Provider(object):
     def bars_to_rows(self, symbol, bars, frequency):
         rows = []
         for bar_ in bars:
-            rows.append(self.bar_to_row(bar_))
+            rows.append(self.bar_to_row(bar_, frequency))
         return symbol, rows
 
     def __verify_bar(self, symbol, bar_, i):
