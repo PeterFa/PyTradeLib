@@ -7,7 +7,7 @@ class Feed(barfeed.BarFeed):
     def __init__(self, frequency=None, bar_filter=None):
         frequency = frequency or bar.Frequency.DAY
         barfeed.BarFeed.__init__(self, frequency)
-        self._historical_reader = historicalmanager.DataManager()
+        self._historical_reader = historicalmanager.DataReader()
         self._bar_filter = bar_filter
         self._instruments = {}
 

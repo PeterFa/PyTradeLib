@@ -22,14 +22,13 @@ import logging
 import datetime
 
 from daemon.runner import DaemonRunner
-from collections import defaultdict
 
-from pytradelib import db
-from pytradelib import utils
-from pytradelib import settings
+from pytradelib import db as db_
+from pytradelib import bar
 from pytradelib import historicalmanager
 from pytradelib.failed import Symbols as FailedSymbols
 from pytradelib.dataproviders.yahoo import yql
+
 
 class Month(object):
     Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec = range(1, 13)
@@ -46,6 +45,7 @@ class Month(object):
             return 31
 
 Month = Month()
+
 
 class TradingWeek(object):
     MarketOpen = datetime.time(9, 29) # hopefully our system clock's time is within a minute of Yahoo's.....
@@ -67,30 +67,33 @@ TradingWeek = TradingWeek()
 
 
 class Manager(object):
-    def __init__(self):
-        self.stdin_path = '/dev/null'
-        self.stdout_path = '/dev/tty'
-        self.stderr_path = '/dev/tty'
-        self.pidfile_path =  '/var/run/testdaemon/testdaemon.pid'
-        self.pidfile_timeout = 5
-
-        self._db = db.Database()
-        self.__historical_manager = historicalmanager.DataManager()
-
-        self.__historical_initialized_handler = \
-            self.__historical_manager.get_symbol_initialized_handler()
-        #self.__historical_initialized_handler.subscribe(self.__historical_initialized)
-
-        self.__historical_updated_handler = \
-            self.__historical_manager.get_symbol_updated_handler()
-        #self.__historical_updated_handler.subscribe(self.__historical_updated)
-
+    def __init__(self, db=None):
+        self._db = db or db_.Database()
         self.__update_intervals = {
             'symbol_index': {'days': [TradingWeek.Monday], 'time': TradingWeek.MarketOpen},
             'key_stats': {'days': TradingWeek.Weekday, 'time': TradingWeek.MarketClose},
             'intraday': {'days': TradingWeek.Weekday, 'timedelta': datetime.timedelta(seconds=25)},
             'historical': {'days': TradingWeek.Weekday, 'time': TradingWeek.MarketCloseHistorical},
             }
+
+        # initialize our data managers and subscribe to update events
+        self._historical_reader = historicalmanager.DataReader()
+        self._historical_updater = historicalmanager.DataUpdater(self._db)
+        self.__historical_updated_handler = \
+            self._historical_updater.get_symbol_updated_handler()
+        self.__historical_updated_handler.subscribe(
+            self.__historical_updated_event)
+
+        # setup for running as a daemon
+        self.stdin_path = '/dev/null'
+        self.stdout_path = '/dev/tty'
+        self.stderr_path = '/dev/tty'
+        self.pidfile_path =  '/var/run/testdaemon/testdaemon.pid'
+        self.pidfile_timeout = 5
+
+    @property
+    def historical_reader(self):
+        return self._historical_reader
 
     def run(self):
         while True:
@@ -157,22 +160,21 @@ class Manager(object):
         else:
             print 'no removed symbols in this index update'
 
+    def _initialize_historical(self, symbols, frequency=None):
+        self._historical_updater.initialize_symbols(symbols, frequency)
+
+    def _update_historical(self, symbols, frequency=None):
+        self._historical_updater.update_symbols(symbols, frequency)
+
     def __init_or_update_index(self, index):
         self._db.insert_or_update_sectors(index['sectors'])
         self._db.insert_or_update_industries(index['industry_sectors'])
         self._db.insert_or_update_symbols(index['symbols'])
 
-    #def historical_initialized(self, symbol, frequency):
-        #return self.__last_updated['historical_initialized'][symbol].get(frequency, False)
-
-    #def historical_updated(self, symbol, frequency):
-        #return self.__last_updated['historical_updated'][symbol].get(frequency, False)
-
-    #def __historical_initialized(self, symbol, frequency):
-        #self.__last_updated['historical_initialized'][symbol][frequency] = True
-
-    #def __historical_updated(self, symbol, frequency):
-        #self.__last_updated['historical_updated'][symbol][frequency] = True
+    def __historical_updated_event(self, symbol, frequency):
+        bar_ = self._historical_reader.get_newest_bar(symbol, frequency)
+        self._db.set_updated(
+            bar.FrequencyToStr[frequency], symbol, bar_.get_date_time())
 
     #def key_stats_updated(self, symbol):
         #return self.__last_updated['key_stats_updated'].get(symbol, False)

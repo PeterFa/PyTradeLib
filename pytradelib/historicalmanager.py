@@ -30,7 +30,7 @@ from pytradelib import observer
 
 '''
 The historical parsing code is implemented as a pluggable generator pipeline:
-[See DataManager.__get_bars() and DataManager.__update_symbols() for the code.
+[See DataReader.__get_bars() and DataUpdater.__update_symbols() for the code.
 Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
 
     Initialize the generator pipeline with an Instrument or [Instruments]
@@ -38,14 +38,14 @@ Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
         V
     file_path(s) -> file_open -> file_to_rows_reader -> row_filter -> parser/drain 
                                                                         |
-    Return values from DataManager.get_X_bars():                        V
+    Return values from DataReader.get_X_bars():                         V
                             for Instrument --------------> [list of bar.Bar]
                             for Instruments --> {"symbol": [list of bar.Bar]}
 
 
-It is used by creating an instance of the DataManager class. Some examples:
+It is used by creating an instance of the DataReader class. Some examples:
     symbols =  # > 5K symbols (!)
-    parser = DataManager()
+    parser = DataReader()
     bars = parser.get_bars_dict(symbols)
     bars = parser.get_newest_bars_dict(symbols)
     bars = parser.get_oldest_bars_dict(symbols)
@@ -161,52 +161,45 @@ def yield_pass(data_pairs, *args, **kwargs):
     for pair in data_pairs:
         yield pair
 
-## ----- Historical Data Manager -----------------------------------------------
-class DataManager(object):
-    def __init__(self):
-        self.__initialized_event = observer.Event()
-        self.__updated_event = observer.Event()
-        self.set_data_provider(settings.DATA_PROVIDER)
+## ----- Historical Data Managers -----------------------------------------------
 
-    def get_supported_data_providers(self):
-        ret = []
-        dir_ = os.path.join(os.path.dirname(__file__), 'dataproviders')
-        for provider in os.listdir(dir_):
-            if os.path.isdir(os.path.join(dir_, provider)):
-                ret.append(provider)
-        return ret
+def get_supported_data_providers():
+    ret = []
+    dir_ = os.path.join(os.path.dirname(__file__), 'dataproviders')
+    for provider in os.listdir(dir_):
+        if os.path.isdir(os.path.join(dir_, provider)):
+            ret.append(provider)
+    return ret
+
+def _get_data_provider(data_provider):
+    data_provider = data_provider.lower()
+    if data_provider not in get_supported_data_providers():
+        raise NotImplementedError()
+    provider_module = importlib.import_module(
+        '.'.join(['pytradelib', 'dataproviders', data_provider]))
+    return provider_module.Provider()
+
+
+class DataReader(object):
+    def __init__(self):
+        self.set_data_provider(settings.DATA_STORE_FORMAT)
 
     def set_data_provider(self, data_provider, default_frequency=None):
-        self.__default_frequency = default_frequency or bar.Frequency.DAY
-        data_provider = data_provider.lower()
-        if data_provider not in self.get_supported_data_providers():
-            raise NotImplementedError()
-        provider_module = importlib.import_module(
-            '.'.join(['pytradelib', 'dataproviders', data_provider]))
-        self.__provider = provider_module.Provider()
+        self._default_frequency = default_frequency or bar.Frequency.DAY
+        self._data_reader = _get_data_provider(data_provider)
 
     def set_bar_filter(self, bar_filter):
-        self.__provider.set_bar_filter(bar_filter)
-
-    def get_symbol_initialized_handler(self):
-        return self.__initialized_event
-
-    def get_symbol_updated_handler(self):
-        return self.__updated_event
-
-# --- get_bars functions -------------------------------------------------------
-
-# FIXME: are all these *really* needed? mainly the ones with oldest seem unnecessary.
+        self._data_reader.set_bar_filter(bar_filter)
 
     def get_recarray(self, symbol, frequency=None):
         return self.get_recarrays([symbol], frequency)[0]
         
     def get_recarrays(self, symbols, frequency=None):
-        frequency = frequency or self.__default_frequency
+        frequency = frequency or self._default_frequency
 
         # define the pipeline
         symbol_file_handles =  open_files_readable(
-            self.__provider.get_symbol_file_paths(symbols, frequency) )
+            self._data_reader.get_symbol_file_paths(symbols, frequency) )
 
         # start and drain the pipeline
         ret = []
@@ -223,6 +216,7 @@ class DataManager(object):
     def get_bars_dict(self, symbols, frequency=None):
         return self.__get_bars(symbols, symbol_rows, frequency, use_bar_filter=True)
 
+    # FIXME: are all the following public functions *really* needed?
     def get_newest_bar(self, symbol, frequency=None):
         ret = self.__get_bars([symbol], newest_symbol_row, frequency, use_bar_filter=False)
         return ret[symbol][0] # return just the first bar for the symbol
@@ -250,20 +244,53 @@ class DataManager(object):
     def get_newest_and_oldest_bars_dict(self, symbols, frequency=None):
         return self.__get_bars(symbols, newest_and_oldest_symbol_rows, frequency, use_bar_filter=False)
 
-# --- symbol initializing functions --------------------------------------------
+    def __get_bars(self, symbols, row_generator, frequency, use_bar_filter):
+        frequency = frequency or self._default_frequency
+
+        # define the pipeline
+        symbol_rows_ = row_generator( open_files_readable(
+            self._data_reader.get_symbol_file_paths(symbols, frequency)) )
+
+        # start the pipeline and and drain the results into ret
+        ret = {}
+        for symbol, rows in symbol_rows_:
+            symbol, bars = self._data_reader.rows_to_bars(symbol, rows, frequency, use_bar_filter)
+            if bars:
+                ret[symbol] = bars
+        return ret
+
+
+class DataUpdater(object):
+    def __init__(self, db):
+        self._updated_event = observer.Event()
+        self._db = db
+        self.set_data_handlers(settings.DATA_PROVIDER, settings.DATA_STORE_FORMAT)
+
+    def set_data_handlers(self, data_provider, data_writer, default_frequency=None):
+        self._downloader_format = data_provider.lower()
+        self._writer_format = data_writer.lower()
+        self._default_frequency = default_frequency or bar.Frequency.DAY
+        self._data_downloader = _get_data_provider(self._downloader_format)
+        self._data_writer = self._data_downloader
+        if self._downloader_format != self._writer_format:
+            self._data_writer = _get_data_provider(self._writer_format)
+
+    def get_symbol_updated_handler(self):
+        return self._updated_event
+
     def initialize_symbol(self, symbol, frequency=None):
-        frequency = frequency or self.__default_frequency
-        if self.__provider.symbol_initialized(symbol, frequency):
+        frequency = frequency or self._default_frequency
+        if self._data_writer.symbol_initialized(symbol, frequency):
             print 'symbol %s already initialized!' % symbol
             return None
         for symbol in self.__update_symbols([symbol], frequency):
-            self.__initialized_event.emit(symbol, frequency)
+            self._updated_event.emit(symbol, frequency)
 
     def initialize_symbols(self, symbols, frequency=None):
-        frequency = frequency or self.__default_frequency
+        frequency = frequency or self._default_frequency
         initialized = []
         for symbol in symbols:
-            if self.__provider.symbol_initialized(symbol, frequency):
+            if self._data_writer.symbol_initialized(symbol, frequency):
                 initialized.append(symbol)
         if initialized:
             print 'symbols %s already initialized!' % initialized
@@ -273,14 +300,13 @@ class DataManager(object):
                 return None
         for symbol in self.__update_symbols(symbols, frequency,
             display_progress = True,
-            sleep = 4
+            sleep = 2.5
         ):
-            self.__initialized_event.emit(symbol, frequency)
+            self._updated_event.emit(symbol, frequency)
 
-# --- symbol updating functions ------------------------------------------------
     def update_symbol(self, symbol, frequency=None):
-        frequency = frequency or self.__default_frequency
-        if not self.__provider.symbol_initialized(symbol, frequency):
+        frequency = frequency or self._default_frequency
+        if not self._data_writer.symbol_initialized(symbol, frequency):
             print 'symbol %s not initialized yet.' % symbol
             return None
         for symbol in self.__update_symbols([symbol], frequency,
@@ -289,13 +315,13 @@ class DataManager(object):
             process_data_update_function = process_data_to_update,
             init = False
         ):
-            self.__updated_event.emit(symbol, frequency)
+            self._updated_event.emit(symbol, frequency)
 
     def update_symbols(self, symbols, frequency=None):
-        frequency = frequency or self.__default_frequency
+        frequency = frequency or self._default_frequency
         uninitialized = []
         for symbol in symbols:
-            if not self.__provider.symbol_initialized(symbol, frequency):
+            if not self._data_writer.symbol_initialized(symbol, frequency):
                 uninitialized.append(symbol)
         for symbol in uninitialized:
             symbols.pop(symbols.index(symbol))
@@ -310,25 +336,9 @@ class DataManager(object):
             open_files_function = open_files_updatable,
             process_data_update_function = process_data_to_update,
             init = False,
-            sleep = 4
+            sleep = 2.5
         ):
-            self.__updated_event.emit(symbol, frequency)
-
-# --- __private functions ------------------------------------------------------
-    def __get_bars(self, symbols, row_generator, frequency, use_bar_filter):
-        frequency = frequency or self.__default_frequency
-
-        # define the pipeline
-        symbol_rows_ = row_generator( open_files_readable(
-            self.__provider.get_symbol_file_paths(symbols, frequency)) )
-
-        # start the pipeline and and drain the results into ret
-        ret = {}
-        for symbol, rows in symbol_rows_:
-            symbol, bars = self.__provider.rows_to_bars(symbol, rows, frequency, use_bar_filter)
-            if bars:
-                ret[symbol] = bars
-        return ret
+            self._updated_event.emit(symbol, frequency)
 
     def __update_symbols(self, symbols, frequency,
         operation_name = 'download',
@@ -338,18 +348,21 @@ class DataManager(object):
         init = True,
         sleep = None
     ):
-        frequency = frequency or self.__default_frequency
+        frequency = frequency or self._default_frequency
         batch_size = 50
         if frequency == bar.Frequency.MINUTE:
             batch_size = 150
-        # load the latest stored datetime for generating urls. this doubles as a flag for initializing vs updating
+        # load the latest stored datetime for generating urls.
+        # this doubles as a flag for initializing vs updating
         symbols = dict((x, None) for x in symbols)
         if frequency != bar.Frequency.MINUTE and not init:
-            symbols = dict((x, self.get_newest_bar(x, frequency).get_date_time()) for x in symbols)
+            symbols = dict(
+                (x, self._db.get_updated(bar.FrequencyToStr[frequency], x))
+                for x in symbols)
         elif not init:
             symbols = dict((x, 1) for x in symbols)
-        url_file_paths = [x for x in self.__provider.get_url_file_paths(symbols, frequency)]
-
+        url_file_paths = [x for x in self._data_downloader.get_url_file_paths(
+                                                            symbols, frequency)]
         if display_progress:
             total_len = len(url_file_paths)
             current_idx = 0

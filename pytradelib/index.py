@@ -17,27 +17,28 @@
 
 import os
 
+from pytradelib import db
 from pytradelib import utils
 from pytradelib import settings
-from pytradelib import historicalmanager
-from pytradelib import updatemanager
 from pytradelib import containers
+from pytradelib import updatemanager
 
 
 class Factory(object):
     def __init__(self):
-        self.__historical_manager = historicalmanager.DataManager()
-        self.__update_manager = updatemanager.Manager()
+        self.__db = db.Database()
+        self.__update_manager = updatemanager.Manager(self.__db)
+        self.__historical_manager = self.__update_manager.historical_reader
         self.__index = self.__load_index()
-        self.__instruments = {}
-        self.__sectors = {}
-        self.__industries = {}
+
+        self.__sectors = {}     # cache for Sector instances
+        self.__industries = {}  # cache for Industry instances
+        self.__instruments = {} # cache for Instrument instances
 
     def __load_index(self):
         if not self.__update_manager.index_initialized():
             self.__update_manager.update_index()
-        # FIXME: figure out a better design than using UM's internal _db variable
-        index = self.__update_manager._db.get_index()
+        index = self.__db.get_index()
         index['symbols'] = dict((x['symbol'], x) for x in index['symbols'])
         index['industry_sectors'] = dict((x, y) for x, y in index['industry_sectors'])
         index['sector_industries'] = dict((x, []) for x in index['sectors'])
