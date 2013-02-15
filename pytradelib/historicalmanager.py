@@ -324,7 +324,7 @@ class DataUpdater(object):
                 return None
         for symbol, latest_dt in self.__update_symbols(symbols, frequency,
             display_progress = True,
-            sleep = 2.5
+            sleep = 1
         ):
             self._updated_event.emit(symbol, frequency, latest_dt)
 
@@ -360,7 +360,7 @@ class DataUpdater(object):
             open_files_function = open_files_updatable,
             process_data_update_function = process_data_to_update,
             init = False,
-            sleep = 2.5
+            sleep = 1
         ):
             self._updated_event.emit(symbol, frequency, latest_dt)
 
@@ -373,9 +373,10 @@ class DataUpdater(object):
         sleep = None
     ):
         frequency = frequency or self._default_frequency
-        batch_size = 50
+        batch_size = 250
         if frequency == bar.Frequency.MINUTE:
-            batch_size = 150
+            batch_size = 500
+            sleep = None
         # load the latest stored datetime for generating urls.
         # this doubles as a flag for initializing vs updating
         symbols = dict((x, None) for x in symbols)

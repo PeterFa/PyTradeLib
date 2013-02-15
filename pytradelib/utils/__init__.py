@@ -172,10 +172,10 @@ def download(url, tag=None):
                 raise e
         except urllib2.URLError, e:
             if 'server failed' in str(e) or 'misformatted query' in str(e):
-                time.sleep(0.02)
+                time.sleep(0.1)
                 print 'retrying download of %s' % url
             elif 'connection reset by peer' in str(e) or 'request timed out' in str(e):
-                time.sleep(0.2)
+                time.sleep(0.5)
                 print 'retrying download of %s' % url
             else:
                 raise e
