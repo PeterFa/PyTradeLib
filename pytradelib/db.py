@@ -52,9 +52,9 @@ class BaseDatabase(object):
 
         self._stats_columns = OrderedDict([
             ('symbol_id', 'INTEGER PRIMARY KEY REFERENCES symbol (symbol_id)'),
-            ('last_trade_datetime', 'TEXT'),  # delayed ~15mins during market hours
-            ('last_trade_price', 'REAL'),     # delayed ~15mins during market hours
-            ('last_trade_volume', 'INTEGER'), # delayed ~15mins during market hours
+            ('last_trade_datetime', 'TEXT'),  # delayed ~15mins during mkt hrs
+            ('last_trade_price', 'REAL'),     # delayed ~15mins during mkt hrs
+            ('last_trade_volume', 'INTEGER'), # delayed ~15mins during mkt hrs
             ('year_high', 'REAL'),
             ('year_low', 'REAL'),
             ('ma_50', 'REAL'),
@@ -75,12 +75,12 @@ class BaseDatabase(object):
             ('short_ratio', 'REAL'),
             ])
 
-        self._system_updated_columns = OrderedDict([
+        self._system_last_updated_columns = OrderedDict([
             ('update_id', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
             ('symbol_index', 'TEXT'),
             ])
 
-        self._symbol_updated_columns = OrderedDict([
+        self._symbol_last_updated_columns = OrderedDict([
             ('symbol_id', 'INTEGER PRIMARY KEY REFERENCES symbol (symbol_id)'),
             ('stats', 'TEXT'),
             ('minute', 'TEXT'),
@@ -107,8 +107,10 @@ class BaseDatabase(object):
         self.__create_table('industry', self._industry_columns)
         self.__create_table('symbol', self._symbol_columns)
         self.__create_table('stats', self._stats_columns)
-        self.__create_table('system_last_updated', self._system_updated_columns)
-        self.__create_table('symbol_last_updated', self._symbol_updated_columns)
+        self.__create_table('system_last_updated',
+                                            self._system_last_updated_columns)
+        self.__create_table('symbol_last_updated',
+                                            self._symbol_last_updated_columns)
 
     def __create_table(self, table_name, column_defs_dict):
         self._connection.execute("CREATE TABLE %s (%s)" % (table_name,
@@ -168,7 +170,7 @@ class BaseDatabase(object):
         try:
             sql = "SELECT symbol_id FROM symbol WHERE symbol=?"
             return self.select_row(sql, (symbol,))['symbol_id']
-        except IndexError:
+        except TypeError:
             sql = 'INSERT INTO symbol (symbol) VALUES (?)'
             ret = self._connection.execute(sql, (symbol,))
             # FIXME: potential optimization: shouldn't _get_symbol_id always
@@ -200,6 +202,30 @@ class Database(object):
     def __init__(self, db_file_path=None):
         self._db = BaseDatabase(db_file_path)
 
+    @property
+    def sector_columns(self):
+        return self._db._sector_columns.keys()
+
+    @property
+    def industry_columns(self):
+        return self._db._industry_columns.keys()
+
+    @property
+    def symbol_columns(self):
+        return self._db._symbol_columns.keys()
+
+    @property
+    def stats_columns(self):
+        return self._db._stats_columns.keys()
+
+    @property
+    def system_last_updated_columns(self):
+        return self._db._system_last_updated_columns.keys()
+
+    @property
+    def symbol_last_updated_columns(self):
+        return self._db._symbol_last_updated_columns.keys()
+
     def get_symbols(self):
         sql = "SELECT symbol FROM symbol"
         return [row['symbol'] for row in self._db.select_rows(sql)]
@@ -220,36 +246,37 @@ class Database(object):
             'industry_sectors': [(x['industry'], x['sector'])
                                 for x in self._db.select_rows(sql)]
             }
-        sql = 'SELECT symbol, symbol.name AS name, sector.name AS sector, industry.name AS industry'\
-            ' FROM symbol JOIN industry ON (symbol.industry_id = industry.industry_id)'\
-            ' JOIN sector ON (industry.sector_id = sector.sector_id)'
+        sql = 'SELECT symbol, symbol.name AS name, sector.name AS sector, '\
+            'industry.name AS industry FROM symbol '\
+            'JOIN industry ON (symbol.industry_id = industry.industry_id) '\
+            'JOIN sector ON (industry.sector_id = sector.sector_id)'
         ret['symbols'] = self._db.select_rows(sql)
         return ret
 
     def get_updated(self, what, symbol=None):
         sql = 'SELECT %s FROM ' % what
-        if what in self._system_updated_columns:
+        if what in self.system_last_updated_columns:
             sql += 'system_last_updated'
             row = self._db.select_row(sql)
         else:
             if symbol is None:
                 raise Exception('must provide the symbol with "%s"' % what)
-            sql += 'symbol_last_updated WHERE symbol=?'
-            row = self._db.select_row(sql, (symbol,))
-        when = row[what]
-        return datetime.datetime.strptime(when, '%Y-%m-%d %H:%M:%S')
+            sql += 'symbol_last_updated WHERE symbol_id=?'
+            row = self._db.select_row(sql, (self._db.get_symbol_id(symbol),))
+        return datetime.datetime.strptime(row[what], '%Y-%m-%d %H:%M:%S')\
+            if row else None
 
     def set_updated(self, what, symbol=None, when=None):
         if not when:
             when = datetime.datetime.now() # FIXME: use UTC
         when = when.strftime('%Y-%m-%d %H:%M:%S')
-        if what in self._system_updated_columns:
+        if what in self.system_last_updated_columns:
             self._db.insert_or_update('system_last_updated', [{what: when}])
         else:
             if symbol is None:
                 raise Exception('must provide the symbol with "%s"' % what)
             self._db.insert_or_update('symbol_last_updated',
-                [{'symbol': symbol, what: when}])
+                [{'symbol_id': self._db.get_symbol_id(symbol), what: when}])
 
     def insert_or_update_sectors(self, sectors):
         ''' Save sectors to the db.
@@ -264,8 +291,8 @@ class Database(object):
     def insert_or_update_industries(self, industry_sectors):
         ''' Save industries to the db.
 
-        :param industry_sectors: A tuple('industry name', 'sector name') pair or a list of them
-        :type industry_sectors: ('industry names', 'sector names') or list[tuples]
+        :param industry_sectors: [list of] tuple('industry name', 'sector name')
+        :type industry_sectors: [list of] tuple('industry name', 'sector name')
         '''
         if not isinstance(industry_sectors, list):
             assert(isinstance(industry_sectors, tuple))
@@ -279,8 +306,8 @@ class Database(object):
     def insert_or_update_symbols(self, symbol_dicts):
         ''' Save symbols to the db.
 
-        :param symbol_dicts: dict or list of dicts. Required Keys: symbol. Optional: name, industry, exchange, ipo_date, newest_date
-        :type symbol_dicts: [{keys: symbol, [any optional keys]}]
+        :param symbol_dicts: Keys: symbol, name, industry, exchange, ipo_date
+        :type symbol_dicts: [list of] dict(keys: symbol, [any optional keys])
         '''
         if not isinstance(symbol_dicts, (list, tuple)):
             assert(isinstance(symbol_dicts, dict))
@@ -292,7 +319,7 @@ class Database(object):
         self._db.insert_or_update('symbol', symbol_dicts)
 
     def insert_or_update_stats(self, stats):
-        # some of the keys in stats belong in the symbol table; separate them here.
+        # some of the keys in stats belong in the symbol table; separate them
         symbol_dicts = []
         for d in stats:
             d['symbol'] = d['symbol'].lower()
@@ -313,12 +340,12 @@ class Database(object):
         self.insert_or_update_symbols(all_symbols)
 
         sql = "INSERT OR REPLACE INTO stats (%s) VALUES (%s?)" % (
-                ','.join(self._stats_columns),
-                '?,' * (len(self._stats_columns) - 1))
+                ','.join(self.stats_columns),
+                '?,' * (len(self.stats_columns) - 1))
         def param_gen():
             for instrument in instruments:
                 params = [self._db.get_symbol_id(instrument.symbol())]
-                keys = self._stats_columns.keys()
+                keys = self.stats_columns
                 keys.pop(0) # 'symbol_id'
                 params.extend([instrument[key] for key in keys])
                 yield tuple(params)
@@ -330,13 +357,13 @@ class Database(object):
 
     #def get_instrument(self, symbol):
         #sql = "SELECT %s FROM instrument WHERE symbol=?" % (
-            #','.join(self._stats_columns)) # ['instrument.%s' % col for col in self._stats_columns]))
+            #','.join(self.stats_columns)) # ['instrument.%s' % col for col in self.stats_columns]))
         #row = self._db.select_row(sql, [symbol])
-        #ret = dict((self._stats_columns[i], row[i]) for i in xrange(len(row)))
+        #ret = dict((self.stats_columns[i], row[i]) for i in xrange(len(row)))
         #return ret
 
     #def get_instruments(self, symbols):
         #rows = self._db.select_rows()
 
-        #ret = [ dict((self._stats_columns[i], row[i]) \
+        #ret = [ dict((self.stats_columns[i], row[i]) \
             #for i in xrange(len(row))) for row in rows ]
