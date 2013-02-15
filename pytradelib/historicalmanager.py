@@ -53,7 +53,9 @@ It is used by creating an instance of the DataReader class. Some examples:
     print bars # or do something useful
 
 '''
+
 ## ----- Row Generators --------------------------------------------------------
+
 def symbol_rows(symbol_files):
     for symbol, f in symbol_files:
         data = f.read()
@@ -96,7 +98,9 @@ def newest_symbol_row(symbol_files):
     for symbol, rows in symbol_rows_:
         yield (symbol, [rows[-1]])
 
+
 ## ----- File Read, Write and Update Generators --------------------------------
+
 def __yield_open_files(tag_file_paths, mode):
     for tag, file_path in tag_file_paths:
         if mode == 'w':
@@ -137,29 +141,31 @@ def write_data(data_files):
 
 def process_data_to_update(data_files):
     for update_data, f in data_files:
+        # read existing data, relying on string sorting for date comparisons
         if utils.supports_seeking(settings.DATA_COMPRESSION):
-            # read the tail of the file and get the newest stored datetime
+            # read the tail of the file to rows and get newest stored datetime
             new_rows = []
             try: f.seek(-512, 2)
             except IOError: f.seek(0)
             newest_existing_datetime = f.read().split('\n')[-1].split(',')[0]
-        elif settings.DATA_COMPRESSION == 'lz4':
-            # uncompress entire file, split it into rows and get the newest stored datetime
-            new_rows = lz4.loads(f.read()).strip().split('\n')
-            newest_existing_datetime = new_rows[-1].split(',')[0] # rely on string sorting for date comparisons
 
-        # only add new rows if the new row's datetime is greater than the newest stored datetime
+        elif settings.DATA_COMPRESSION == 'lz4':
+            # read entire file to rows and get newest stored datetime
+            new_rows = lz4.loads(f.read()).strip().split('\n')
+            newest_existing_datetime = new_rows[-1].split(',')[0]
+
         update_rows = update_data.strip().split('\n')[1:] # chop the column labels off
+        # only add new rows if row datetime is greater than stored datetime
         for row in update_rows:
             row_datetime = row.split(',')[0]
             if row_datetime > newest_existing_datetime:
                 new_rows.append(row)
-        ret_data = '\n'.join(new_rows)
 
+        # seek to the proper place in the file in preparation for write_data
         if utils.supports_seeking(settings.DATA_COMPRESSION):
-            # jump to the end of the file
+            # jump to the end of the file so we only update existing data
             try: f.seek(-1, 2)
-            except IOError: print 'how on earth did you get here?! waaaaaaaaah bugz! :('
+            except IOError: print 'unexpected file seeking bug :(', f.name
             # make sure there's a trailing new-line character at the end
             last_char = f.read()
             if last_char != '\n':

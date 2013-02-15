@@ -23,7 +23,8 @@ from pytradelib import bar
 
 class YahooFrequencyProvider(object):
     def __init__(self):
-        self.__columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'AdjClose']
+        self.__columns = \
+            ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Adj Close']
 
     def get_csv_column_labels(self):
         return ','.join(self.__columns)
@@ -40,7 +41,7 @@ class YahooFrequencyProvider(object):
         adj_close = float(row[6])
         try:
             return bar.Bar(date, open_, high, low, close, volume, adj_close)
-        except AssertionError, e:
+        except AssertionError as e:
             return str(e)
 
     def bar_to_row(self, bar_):
@@ -61,11 +62,19 @@ class YahooFrequencyProvider(object):
         to_date = datetime.date.today()
         if from_date == to_date:
             from_date -= datetime.timedelta(days=1)
-        if frequency not in [bar.Frequency.DAY, bar.Frequency.WEEK, bar.Frequency.MONTH]:
+        if frequency not in \
+          [bar.Frequency.DAY, bar.Frequency.WEEK, bar.Frequency.MONTH]:
             frequency = bar.Frequency.DAY
-        url = 'http://ichart.finance.yahoo.com/table.csv?s=%s&a=%d&b=%d&c=%d&d=%d&e=%d&f=%d&g=%s&ignore=.csv' % (
-            symbol, from_date.month-1, from_date.day, from_date.year,
-            to_date.month-1, to_date.day, to_date.year, frequency)
+        url = 'http://ichart.finance.yahoo.com/table.csv'\
+            '?s=%s&a=%d&b=%d&c=%d&d=%d&e=%d&f=%d&g=%s&ignore=.csv' % (
+                symbol,
+                from_date.month-1, # Yahoo's months are 0-indexed
+                from_date.day,
+                from_date.year,
+                to_date.month-1,
+                to_date.day,
+                to_date.year,
+                frequency)
         return url
 
     def process_downloaded_data(self, data_file_paths):

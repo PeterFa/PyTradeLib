@@ -63,20 +63,30 @@ class YahooFrequencyProvider(object):
         # minutely data has a big, multi-row header, and only comes one day at a time
         # times are formatted in seconds from the unix epoch; convert them to datetime
         for data, file_path in data_file_paths:
+            symbol = utils.symbol_from_file_path(file_path)
             data_rows = data.strip().split('\n')
             # grab the column labels from the middle of the header and find the start index of the data
+            error = False
             for i, row in enumerate(data_rows):
-                #if i == 0 and '/fb/' in row:
-                    #symbol = True
                 if row.startswith('values:'):
                     row = row[len('values:'):]
                     column_labels = ','.join([x.title() for x in row.split(',')])
+                if row.startswith('error'):
+                    error = True
+                    print 'error downloading minute data for %s: %s' % (
+                        symbol, data_rows[i+1][len('message:'):])
                 elif row.startswith('volume'):
                     # chop off the entire header so data_rows contains only bar rows
                     data_rows = data_rows[i+1:]
                     break
+            if error:
+                continue # FIXME: add to FailedSymbols?
 
-            # date conversions # FIXME: store in UTC
+            # date conversions
+            # FIXME: store in UTC
+            # FIXME: round bars to even minutes?
+            # FIXME: add "fake" missing bars?
+            #        maybe OHLC == avg prev/next closes and volume == None ?
             try:
                 for i, row in enumerate(data_rows):
                     columns = row.split(',')
@@ -84,12 +94,12 @@ class YahooFrequencyProvider(object):
                     columns[0] = dt.strftime('%Y-%m-%d %H:%M:%S')
                     data_rows[i] = ','.join(columns)
             except Exception, e:
-                print str(e)
-                continue
+                print 'error converting date for %s: %s' % (symbol, str(e))
+                continue # FIXME: add to FailedSymbols?
 
             # insert the column labels at the top of the data rows
             data_rows.insert(0, column_labels)
             if len(data_rows) > 2:
+                # FIXME: emit this bar
                 latest_quote = data_rows.pop(-1)
-                print 'latest_quote', latest_quote, 'FIXME: emit this bar' 
             yield ('\n'.join(data_rows), file_path)

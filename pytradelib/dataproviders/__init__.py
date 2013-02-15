@@ -118,8 +118,6 @@ class Provider(object):
         for data, file_path in data_file_paths:
             yield (data.strip(), file_path)
 
-    #def process_data_to_update(self, data_files, frequency):
-        #raise NotImplementedError()
 
     @utils.lower
     def get_url(self, symbol, frequency):

@@ -151,12 +151,12 @@ class Manager(object):
 
         # FIXME: emit these changes instead of printing them
         if new_symbols:
-            print 'newly added symbols: %s\n' % new_symbols
+            print 'newly added symbols: %s\n' % sorted(new_symbols)
         else:
             print 'no new symbols in this index update'
 
         if removed_symbols:
-            print 'removed symbols: %s\n' % removed_symbols
+            print 'removed symbols: %s\n' % sorted(removed_symbols)
         else:
             print 'no removed symbols in this index update'
 
