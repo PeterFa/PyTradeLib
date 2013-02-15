@@ -109,15 +109,14 @@ def open_files_updatable(data_file_paths):
 
 def write_data(data_files):
     for data, f in data_files:
-        if settings.DATA_COMPRESSION == 'lz4':
-            data = lz4.dumps(data)
+        symbol = utils.symbol_from_file_path(f.name)
         if data:
+            if settings.DATA_COMPRESSION == 'lz4':
+                data = lz4.dumps(data)
             f.write(data)
-            symbol = os.path.basename(f.name).split('_')[0]
             f.close()
             yield symbol
         else:
-            symbol = os.path.basename(f.name).split('_')[0]
             file_path = f.name
             f.close()
             if os.stat(file_path).st_size == 0:

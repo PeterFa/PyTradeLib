@@ -36,6 +36,9 @@ class Provider(dataproviders.Provider):
             bar.Frequency.MONTH: day_week_month_manager,
             }
 
+    def name(self):
+        return 'Yahoo'
+
     def get_csv_column_labels(self, frequency):
         return self.__managers[frequency].get_csv_column_labels()
 
@@ -49,16 +52,9 @@ class Provider(dataproviders.Provider):
         return self.__managers[frequency].get_url(symbol, frequency, latest_date_time)
 
     def get_file_path(self, symbol, frequency):
-        frequency_lookup = {
-            bar.Frequency.MINUTE: 'minute',
-            bar.Frequency.DAY: 'day',
-            bar.Frequency.WEEK: 'week',
-            bar.Frequency.MONTH: 'month',
-            }
-        extension = utils.get_extension(settings.DATA_COMPRESSION)
-        file_path = os.path.join(settings.DATA_DIR, 'symbols', symbol, '%s_%s_all_yahoofinance.%s' % (
-            symbol, frequency_lookup[frequency], extension))
-        return file_path
+        file_name = utils.get_historical_file_name(
+            symbol, frequency, self.name(), settings.DATA_COMPRESSION)
+        return os.path.join(settings.DATA_DIR, 'symbols', file_name)
 
     def process_downloaded_data(self, data_file_paths, frequency):
         for data_file_path in self.__managers[frequency].process_downloaded_data(data_file_paths):

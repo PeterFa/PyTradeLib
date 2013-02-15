@@ -30,6 +30,7 @@ except: import json
 try: import cPickle as pickle
 except: import pickle
 
+from pytradelib.bar import (FrequencyToStr, StrToFrequency)
 from pytradelib import settings
 
 ## --- string utils ---------------------------------------------------------
@@ -98,6 +99,28 @@ def supports_seeking(compression_type):
 
 def slug(string):
     return string.lower().replace(' ', '_').replace('&', 'and')
+
+def get_historical_file_name(symbol, frequency, provider_format, compression):
+    return '.'.join([
+        '_'.join([
+            symbol,
+            FrequencyToStr[frequency],
+            provider_format,
+            ]),
+        get_extension(compression),
+        ]).lower().replace(' ', '-')
+
+def symbol_from_file_name(file_name):
+    return file_name.split('_')[0].lower()
+
+def symbol_from_file_path(file_path):
+    return symbol_from_file_name(os.path.basename(file_path))
+
+def frequency_from_file_name(file_name):
+    return StrToFrequency[file_name.split('_')[1]]
+
+def frequency_from_file_path(file_path):
+    return frequency_from_file_name(os.path.basename(file_path))
 
 def save_to_json(data, file_path):
     with open(file_path, 'w') as f:

@@ -27,6 +27,9 @@ class Provider(object):
     def __init__(self):
         self.__bar_filter = None
 
+    def name(self):
+        raise NotImplementedError()
+
     def set_bar_filter(self, bar_filter):
         self.__bar_filter = bar_filter
 
@@ -78,7 +81,7 @@ class Provider(object):
         rows = []
         for bar_ in bars:
             rows.append(self.bar_to_row(bar_))
-        return rows
+        return symbol, rows
 
     def __verify_bar(self, symbol, bar_, i):
         if isinstance(bar_, str):
@@ -128,14 +131,13 @@ class Provider(object):
 
     def get_symbol_file_paths(self, symbols, frequency):
         for symbol in symbols:
-            file_path = self.get_file_path(symbol, frequency)
-            if symbol not in FailedSymbols and os.path.exists(file_path):
-                yield (symbol, file_path)
+            if symbol not in FailedSymbols:
+                yield (symbol, self.get_file_path(symbol, frequency))
 
     def get_url_file_paths(self, symbol_times, frequency):
         for symbol, latest_date_time in symbol_times.items():
             if symbol not in FailedSymbols:
-                url = self.get_url(symbol, frequency, latest_date_time)
-                file_path = self.get_file_path(symbol, frequency)
-                if latest_date_time or not os.path.exists(file_path):
-                    yield (url, {'symbol': symbol, 'file_path': file_path})
+                yield (self.get_url(symbol, frequency, latest_date_time), {
+                    'symbol': symbol,
+                    'file_path': self.get_file_path(symbol, frequency)
+                    })
