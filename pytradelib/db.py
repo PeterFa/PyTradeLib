@@ -277,17 +277,14 @@ class Database(object):
         return datetime.datetime.strptime(row[what], settings.DATE_FORMAT)\
             if row else None
 
-    def set_updated(self, what, symbol=None, when=None):
-        if not when:
-            when = datetime.datetime.now() # FIXME: use UTC
+    def set_index_updated(self, when=None):
+        when = when or datetime.datetime.now() # FIXME: UTC
         when = when.strftime(settings.DATE_FORMAT)
-        if what in self.system_last_updated_columns:
-            self._db.insert_or_update('system_last_updated', [{what: when}])
-        else:
-            if symbol is None:
-                raise Exception('must provide the symbol with "%s"' % what)
-            self._db.insert_or_update('symbol_last_updated',
-                [{'symbol_id': self._db.get_symbol_id(symbol), what: when}])
+        self._db.insert_or_update(
+            'system_last_updated', [{'symbol_index': when}])
+
+    def set_symbol_updated(self, list_of_dicts):
+            self._db.insert_or_update('symbol_last_updated', list_of_dicts)
 
     def insert_or_update_sectors(self, sectors):
         ''' Save sectors to the db.

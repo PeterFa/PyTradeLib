@@ -427,3 +427,4 @@ class DataUpdater(object):
         if display_progress:
             if last_pct != 100:
                 print '100%'
+        yield (None, None) # poison pill to signal end of downloads

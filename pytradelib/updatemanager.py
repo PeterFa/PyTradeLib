@@ -75,6 +75,7 @@ class Manager(object):
             'intraday': {'days': TradingWeek.Weekday, 'timedelta': datetime.timedelta(seconds=25)},
             'historical': {'days': TradingWeek.Weekday, 'time': TradingWeek.MarketCloseHistorical},
             }
+        self.__update_cache = [] # cache of tuple('what', 'symbol', 'when')
 
         # initialize our data managers and subscribe to update events
         self._historical_reader = historicalmanager.DataReader()
@@ -138,7 +139,7 @@ class Manager(object):
 
     def _update_index(self):
         new_index = yql.SymbolIndex.get_data()
-        self._db.set_updated('symbol_index')
+        self._db.set_index_updated()
         all_new_symbols = [x['symbol'] for x in new_index['symbols']]
         all_existing_symbols = self._db.get_symbols()
         new_symbols = \
@@ -172,8 +173,14 @@ class Manager(object):
         self._db.insert_or_update_symbols(index['symbols'])
 
     def __historical_updated_event(self, symbol, frequency, latest_dt):
-        self._db.set_updated(
-            bar.FrequencyToStr[frequency], symbol, latest_dt)
+        if len(self.__update_cache) > 1000 or (symbol is None and latest_dt is None):
+            self._db.set_symbol_updated([
+                {'symbol_id': self._db.get_symbol_id(y), x: z}
+                for x, y, z in self.__update_cache])
+            self.__update_cache = []
+        else:
+            self.__update_cache.append(
+                (bar.FrequencyToStr[frequency], symbol, latest_dt))
 
     #def key_stats_updated(self, symbol):
         #return self.__last_updated['key_stats_updated'].get(symbol, False)
