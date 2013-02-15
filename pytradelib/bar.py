@@ -29,6 +29,20 @@ class Frequency:
     WEEK = 'w'
     MONTH = 'm'
 
+FrequencyToStr = {
+    Frequency.MINUTE: 'minute',
+    Frequency.FIVE: 'five-minute',
+    Frequency.TEN: 'ten-minute',
+    Frequency.FIFTEEN: 'fifteen-minute',
+    Frequency.THIRTY: 'thirty-minute',
+    Frequency.HOUR: 'hour',
+    Frequency.DAY: 'day',
+    Frequency.WEEK: 'week',
+    Frequency.MONTH: 'month',
+    }
+
+StrToFrequency = dict(zip(FrequencyToStr.values(), FrequencyToStr.keys()))
+
 
 class Bar(object):
     """A symbol's prices at a given time.
