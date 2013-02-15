@@ -171,10 +171,9 @@ class Manager(object):
         self._db.insert_or_update_industries(index['industry_sectors'])
         self._db.insert_or_update_symbols(index['symbols'])
 
-    def __historical_updated_event(self, symbol, frequency):
-        bar_ = self._historical_reader.get_newest_bar(symbol, frequency)
+    def __historical_updated_event(self, symbol, frequency, latest_dt):
         self._db.set_updated(
-            bar.FrequencyToStr[frequency], symbol, bar_.get_date_time())
+            bar.FrequencyToStr[frequency], symbol, latest_dt)
 
     #def key_stats_updated(self, symbol):
         #return self.__last_updated['key_stats_updated'].get(symbol, False)

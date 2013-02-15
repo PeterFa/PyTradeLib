@@ -126,12 +126,15 @@ def write_data(data_files, provider):
     for rows, f in data_files:
         if rows:
             symbol = utils.symbol_from_file_path(f.name)
+            frequency = utils.frequency_from_file_path(f.name)
+            latest_date_time = \
+                provider.row_to_bar(rows[-1], frequency).get_date_time()
             data = '\n'.join(rows)
             if settings.DATA_COMPRESSION == 'lz4':
                 data = lz4.dumps(data)
             f.write(data)
             f.close()
-            yield symbol
+            yield (symbol, latest_date_time)
         else:
             file_path = f.name
             f.close()
@@ -180,6 +183,7 @@ def process_data_to_update(data_files, provider):
             f.seek(0)
 
         yield (new_rows, f)
+
 
 ## ----- Historical Data Managers -----------------------------------------------
 
@@ -303,8 +307,8 @@ class DataUpdater(object):
         if self._data_writer.symbol_initialized(symbol, frequency):
             print 'symbol %s already initialized!' % symbol
             return None
-        for symbol in self.__update_symbols([symbol], frequency):
-            self._updated_event.emit(symbol, frequency)
+        for symbol, latest_dt in self.__update_symbols([symbol], frequency):
+            self._updated_event.emit(symbol, frequency, latest_dt)
 
     def initialize_symbols(self, symbols, frequency=None):
         frequency = frequency or self._default_frequency
@@ -318,24 +322,24 @@ class DataUpdater(object):
                 symbols.pop(symbols.index(symbol))
             if not symbols:
                 return None
-        for symbol in self.__update_symbols(symbols, frequency,
+        for symbol, latest_dt in self.__update_symbols(symbols, frequency,
             display_progress = True,
             sleep = 2.5
         ):
-            self._updated_event.emit(symbol, frequency)
+            self._updated_event.emit(symbol, frequency, latest_dt)
 
     def update_symbol(self, symbol, frequency=None):
         frequency = frequency or self._default_frequency
         if not self._data_writer.symbol_initialized(symbol, frequency):
             print 'symbol %s not initialized yet.' % symbol
             return None
-        for symbol in self.__update_symbols([symbol], frequency,
+        for symbol, latest_dt in self.__update_symbols([symbol], frequency,
             operation_name = 'update',
             open_files_function = open_files_updatable,
             process_data_update_function = process_data_to_update,
             init = False
         ):
-            self._updated_event.emit(symbol, frequency)
+            self._updated_event.emit(symbol, frequency, latest_dt)
 
     def update_symbols(self, symbols, frequency=None):
         frequency = frequency or self._default_frequency
@@ -350,7 +354,7 @@ class DataUpdater(object):
             print 'symbols %s not initialized yet!' % uninitialized
             if not symbols:
                 return None
-        for symbol in self.__update_symbols(symbols, frequency,
+        for symbol, latest_dt in self.__update_symbols(symbols, frequency,
             operation_name = 'update',
             display_progress = True,
             open_files_function = open_files_updatable,
@@ -358,7 +362,7 @@ class DataUpdater(object):
             init = False,
             sleep = 2.5
         ):
-            self._updated_event.emit(symbol, frequency)
+            self._updated_event.emit(symbol, frequency, latest_dt)
 
     def __update_symbols(self, symbols, frequency,
         operation_name = 'download',
@@ -407,8 +411,11 @@ class DataUpdater(object):
                     self._data_downloader, self._data_writer)
 
             # pipeline for saving/updating downloaded data to the storage files
-            for symbol in write_data(process_data_update_function(
-                open_files_function(data_file_paths))
+            for symbol, latest_date_time in write_data(
+                process_data_update_function(
+                    open_files_function(data_file_paths),
+                    self._data_writer),
+                self._data_writer
             ):
                 if display_progress:
                     current_idx += 1
@@ -416,7 +423,7 @@ class DataUpdater(object):
                     if pct != last_pct:
                         last_pct = pct
                         print '%i%%' % pct
-                yield symbol
+                yield (symbol, latest_date_time)
         if display_progress:
             if last_pct != 100:
                 print '100%'
