@@ -274,13 +274,13 @@ class Database(object):
                 raise Exception('must provide the symbol with "%s"' % what)
             sql += 'symbol_last_updated WHERE symbol_id=?'
             row = self._db.select_row(sql, (self.get_symbol_id(symbol),))
-        return datetime.datetime.strptime(row[what], '%Y-%m-%d %H:%M:%S')\
+        return datetime.datetime.strptime(row[what], settings.DATE_FORMAT)\
             if row else None
 
     def set_updated(self, what, symbol=None, when=None):
         if not when:
             when = datetime.datetime.now() # FIXME: use UTC
-        when = when.strftime('%Y-%m-%d %H:%M:%S')
+        when = when.strftime(settings.DATE_FORMAT)
         if what in self.system_last_updated_columns:
             self._db.insert_or_update('system_last_updated', [{what: when}])
         else:

@@ -20,6 +20,7 @@ import calendar
 
 from pytradelib import utils
 from pytradelib import bar
+from pytradelib import settings
 
 
 class YahooFrequencyProvider(object):
@@ -31,7 +32,10 @@ class YahooFrequencyProvider(object):
 
     def row_to_bar(self, row):
         row = row.split(',')
-        date = datetime.datetime.fromtimestamp(int(row[0]))
+        try:
+            date = datetime.datetime.fromtimestamp(int(row[0]))
+        except ValueError:
+            date = datetime.datetime.strptime(row[0], settings.DATE_FORMAT)
         close = float(row[1])
         high = float(row[2])
         low = float(row[3])
@@ -88,13 +92,15 @@ class YahooFrequencyProvider(object):
                 for i, row in enumerate(data_rows):
                     columns = row.split(',')
                     dt = datetime.datetime.fromtimestamp(int(columns[0]))
-                    columns[0] = dt.strftime('%Y-%m-%d %H:%M:%S')
+                    columns[0] = dt.strftime(settings.DATE_FORMAT)
                     data_rows[i] = ','.join(columns)
             except Exception, e:
                 print 'error converting date for %s: %s' % (symbol, str(e))
                 continue # FIXME: add to FailedSymbols?
 
-            if len(data_rows) > 1:
+            now = datetime.datetime.now().time() # FIXME: UTC
+            if len(data_rows) > 1 \
+              and (datetime.time(9, 30) < now < datetime.time(16)):
                 # FIXME: emit this bar
                 latest_quote = data_rows.pop(-1)
             yield (data_rows, file_path)

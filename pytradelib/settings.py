@@ -20,6 +20,7 @@ import pytz
 import datetime
 
 LOCAL_TIMEZONE = pytz.timezone('America/New_York')
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S' # YYYY-MM-DD HH:MM:SS
 
 DATA_DIR = os.path.join(os.environ['HOME'], 'pytradelib_data')
 DATA_PROVIDER = 'Yahoo'
