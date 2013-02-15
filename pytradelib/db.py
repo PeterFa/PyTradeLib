@@ -20,6 +20,7 @@ import sqlite3
 import datetime
 
 from collections import OrderedDict
+
 from pytradelib import utils
 from pytradelib import settings
 
@@ -173,7 +174,7 @@ class BaseDatabase(object):
         except TypeError:
             sql = 'INSERT INTO symbol (symbol) VALUES (?)'
             ret = self._connection.execute(sql, (symbol,))
-            # FIXME: potential optimization: shouldn't _get_symbol_id always
+            # FIXME: potential optimization: shouldn't get_symbol_id() always
             # be called by somebody who will commit soon thereafter?
             self._connection.commit()
             return ret.lastrowid
@@ -226,6 +227,16 @@ class Database(object):
     def symbol_last_updated_columns(self):
         return self._db._symbol_last_updated_columns.keys()
 
+    @utils.lower
+    def get_symbol_id(self, symbol):
+        return self._db.get_symbol_id(symbol)
+
+    def get_sector_id(self, sector):
+        return self._db.get_sector_id(sector)
+
+    def get_industry_id(self, industry):
+        return self._db.get_industry_id(industry)
+
     def get_symbols(self):
         sql = "SELECT symbol FROM symbol"
         return [row['symbol'] for row in self._db.select_rows(sql)]
@@ -262,7 +273,7 @@ class Database(object):
             if symbol is None:
                 raise Exception('must provide the symbol with "%s"' % what)
             sql += 'symbol_last_updated WHERE symbol_id=?'
-            row = self._db.select_row(sql, (self._db.get_symbol_id(symbol),))
+            row = self._db.select_row(sql, (self.get_symbol_id(symbol),))
         return datetime.datetime.strptime(row[what], '%Y-%m-%d %H:%M:%S')\
             if row else None
 
@@ -344,7 +355,7 @@ class Database(object):
                 '?,' * (len(self.stats_columns) - 1))
         def param_gen():
             for instrument in instruments:
-                params = [self._db.get_symbol_id(instrument.symbol())]
+                params = [self.get_symbol_id(instrument.symbol())]
                 keys = self.stats_columns
                 keys.pop(0) # 'symbol_id'
                 params.extend([instrument[key] for key in keys])
