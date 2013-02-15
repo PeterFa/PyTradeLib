@@ -68,9 +68,6 @@ class YahooFrequencyProvider(object):
             # grab the column labels from the middle of the header and find the start index of the data
             error = False
             for i, row in enumerate(data_rows):
-                if row.startswith('values:'):
-                    row = row[len('values:'):]
-                    column_labels = ','.join([x.title() for x in row.split(',')])
                 if row.startswith('error'):
                     error = True
                     print 'error downloading minute data for %s: %s' % (
@@ -97,9 +94,7 @@ class YahooFrequencyProvider(object):
                 print 'error converting date for %s: %s' % (symbol, str(e))
                 continue # FIXME: add to FailedSymbols?
 
-            # insert the column labels at the top of the data rows
-            data_rows.insert(0, column_labels)
-            if len(data_rows) > 2:
+            if len(data_rows) > 1:
                 # FIXME: emit this bar
                 latest_quote = data_rows.pop(-1)
-            yield ('\n'.join(data_rows), file_path)
+            yield (data_rows, file_path)

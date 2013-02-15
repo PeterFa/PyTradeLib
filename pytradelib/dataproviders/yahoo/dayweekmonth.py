@@ -79,10 +79,9 @@ class YahooFrequencyProvider(object):
 
     def process_downloaded_data(self, data_file_paths):
         for data, file_path in data_file_paths:
-            # keep the column labels at the top but reverse the sort order of data rows
+            # strip the column labels and reverse the sort order of data rows
             # (we want the most recent data to be at the end of the file)
             data_rows = data.strip().split('\n')
             column_labels = data_rows.pop(0)
             data_rows.reverse()
-            data_rows.insert(0, column_labels)
-            yield ('\n'.join(data_rows), file_path)
+            yield (data_rows, file_path)

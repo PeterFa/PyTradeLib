@@ -106,18 +106,13 @@ class Provider(object):
                 yield (data, file_path)
 
     def process_downloaded_data(self, data_file_paths, frequency):
-        # the yielded csv (comma/semicolon/etc) data should be a '\n' newline-delimited
-        # string with the following properties:
-        # - the first line should be the ordered column labels, csv-delimited
-        # - the rest of the lines should be csv-delimited bar-rows, ordered with
-        #     the oldest data at the beginning and the most recent data at the end
-        # - there should be no trailing white-space at the end of the string
+        # The yielded data should be a list of csv-delimited bar-rows,
+        # ordered with the oldest data at 0 and the most recent data at the end
         
-        # the default implementation is to strip trailing white-space and yield;
-        # override if more complex parsing is required
+        # the default implementation is to strip trailing white-space, split by
+        # newlines, chop off the first row and yield. Override if necessary.
         for data, file_path in data_file_paths:
-            yield (data.strip(), file_path)
-
+            yield (data.strip().split('\n')[1:], file_path)
 
     @utils.lower
     def get_url(self, symbol, frequency):

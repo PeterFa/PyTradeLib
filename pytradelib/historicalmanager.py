@@ -68,11 +68,10 @@ def symbol_rows(symbol_files):
         yield (symbol, csv_rows)
 
 def convert_data_file_paths(data_file_paths, from_provider, to_provider):
-    for data, file_path in data_file_paths:
+    for rows, file_path in data_file_paths:
         symbol = utils.symbol_from_file_path(file_path)
         frequency = utils.frequency_from_file_path(file_path)
         new_file_path = to_provider.get_file_path(symbol, frequency)
-        rows = data.strip().split('\n')
         header = rows.pop(0)
         symbol, bars = from_provider.rows_to_bars(symbol, rows, frequency)
         symbol, formatted_rows = to_provider.bars_to_rows(symbol, bars, frequency)
@@ -123,10 +122,11 @@ def open_files_updatable(data_file_paths):
     for data_file_handle in __yield_open_files(data_file_paths, 'r+'):
         yield data_file_handle
 
-def write_data(data_files):
-    for data, f in data_files:
-        symbol = utils.symbol_from_file_path(f.name)
-        if data:
+def write_data(data_files, provider):
+    for rows, f in data_files:
+        if rows:
+            symbol = utils.symbol_from_file_path(f.name)
+            data = '\n'.join(rows)
             if settings.DATA_COMPRESSION == 'lz4':
                 data = lz4.dumps(data)
             f.write(data)
@@ -139,8 +139,14 @@ def write_data(data_files):
                 os.remove(file_path)
             continue
 
-def process_data_to_update(data_files):
-    for update_data, f in data_files:
+def process_data_to_initialize(data_files, provider):
+    for rows, f in data_files:
+        frequency = utils.frequency_from_file_path(f.name)
+        rows.insert(0, provider.get_csv_column_labels(frequency))
+        yield (rows, f)
+
+def process_data_to_update(data_files, provider):
+    for update_rows, f in data_files:
         # read existing data, relying on string sorting for date comparisons
         if utils.supports_seeking(settings.DATA_COMPRESSION):
             # read the tail of the file to rows and get newest stored datetime
@@ -154,7 +160,6 @@ def process_data_to_update(data_files):
             new_rows = lz4.loads(f.read()).strip().split('\n')
             newest_existing_datetime = new_rows[-1].split(',')[0]
 
-        update_rows = update_data.strip().split('\n')[1:] # chop the column labels off
         # only add new rows if row datetime is greater than stored datetime
         for row in update_rows:
             row_datetime = row.split(',')[0]
@@ -173,11 +178,8 @@ def process_data_to_update(data_files):
         elif settings.DATA_COMPRESSION == 'lz4':
             # jump to the beginning of the file so we rewrite everything
             f.seek(0)
-        yield (ret_data, f)
 
-def yield_pass(data_pairs, *args, **kwargs):
-    for pair in data_pairs:
-        yield pair
+        yield (new_rows, f)
 
 ## ----- Historical Data Managers -----------------------------------------------
 
@@ -362,7 +364,7 @@ class DataUpdater(object):
         operation_name = 'download',
         display_progress = False,
         open_files_function = open_files_writeable,
-        process_data_update_function = yield_pass,
+        process_data_update_function = process_data_to_initialize,
         init = True,
         sleep = None
     ):
