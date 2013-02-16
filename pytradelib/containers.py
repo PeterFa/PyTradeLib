@@ -157,11 +157,7 @@ class Instrument(object):
 
 
 class Instruments(object):
-    '''
-    This is a base class and is not meant to be used directly. For a basic
-    Instruments container, use WatchList instead.
-    '''
-    def __init__(self, name):
+    def __init__(self, name=None):
         self.__name = name
         self.__bar_filter = None
         self.__instruments = {}
@@ -173,7 +169,7 @@ class Instruments(object):
         return utils.slug(self.name())
 
     def data_folder(self):
-        raise NotImplementedError()
+        return os.path.join(settings.DATA_DIR, 'watchlists', self.slug())
 
     def set_bar_filter(self, bar_filter):
         self.__bar_filter = bar_filter
@@ -218,14 +214,6 @@ class Instruments(object):
             instrument.update_stats(symbol_stats)
 
     #def update_historical(self, instruments=None):
-
-
-class WatchList(Instruments):
-    def __init__(self, name):
-        Instruments.__init__(self, name)
-
-    def data_folder(self):
-        return os.path.join(settings.DATA_DIR, 'watchlists', self.slug())
 
 
 class Industry(Instruments):
