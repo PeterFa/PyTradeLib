@@ -23,7 +23,7 @@ import matplotlib.mlab as mlab
 
 from pytradelib import utils
 from pytradelib import settings
-from pytradelib.failed import Symbols as FailedSymbols
+from pytradelib.data.failed import Symbols as FailedSymbols
 
 from pytradelib import bar
 from pytradelib import observer
@@ -189,7 +189,7 @@ def process_data_to_update(data_files, provider):
 
 def get_supported_data_providers():
     ret = []
-    dir_ = os.path.join(os.path.dirname(__file__), 'dataproviders')
+    dir_ = os.path.join(os.path.dirname(__file__), 'providers')
     for provider in os.listdir(dir_):
         if os.path.isdir(os.path.join(dir_, provider)):
             ret.append(provider)
@@ -200,7 +200,7 @@ def _get_data_provider(data_provider):
     if data_provider not in get_supported_data_providers():
         raise NotImplementedError()
     provider_module = importlib.import_module(
-        '.'.join(['pytradelib', 'dataproviders', data_provider]))
+        '.'.join(['pytradelib', 'data', 'providers', data_provider]))
     return provider_module.Provider()
 
 

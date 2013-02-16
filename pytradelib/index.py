@@ -17,11 +17,11 @@
 
 import os
 
-from pytradelib import db
 from pytradelib import utils
 from pytradelib import settings
-from pytradelib import containers
-from pytradelib import updatemanager
+from pytradelib.data import db
+from pytradelib.data import containers
+from pytradelib.data import updatemanager
 
 
 class Factory(object):

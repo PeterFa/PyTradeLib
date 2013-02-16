@@ -20,7 +20,7 @@ import datetime
 
 from pytradelib import utils
 from pytradelib import settings
-from pytradelib.dataproviders.yahoo import yql
+from pytradelib.data.providers.yahoo import yql
 
 from pytradelib import bar
 from pytradelib import dataseries

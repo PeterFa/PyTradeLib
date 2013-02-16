@@ -20,8 +20,8 @@ import csv
 
 from pytradelib import utils
 from pytradelib import settings
-from pytradelib import containers
 from pytradelib import barfeed
+from pytradelib.data import containers
 from pytradelib.barfeed import instrumentfeed
 
 
