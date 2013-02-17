@@ -1,13 +1,13 @@
 from pytradelib import bar
 from pytradelib import barfeed
-from pytradelib import historicalmanager
+from pytradelib import historical
 
 
 class Feed(barfeed.BarFeed):
     def __init__(self, frequency=None, bar_filter=None):
         frequency = frequency or bar.Frequency.DAY
         barfeed.BarFeed.__init__(self, frequency)
-        self._historical_reader = historicalmanager.DataReader()
+        self._historical_reader = historical.Reader()
         self._bar_filter = bar_filter
         self._instruments = {}
 

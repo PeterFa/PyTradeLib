@@ -25,7 +25,7 @@ from daemon.runner import DaemonRunner
 
 from pytradelib import bar
 from pytradelib.data import db as db_
-from pytradelib.data import historicalmanager
+from pytradelib.data import historical
 from pytradelib.data.failed import Symbols as FailedSymbols
 from pytradelib.data.providers.yahoo import yql
 
@@ -78,8 +78,8 @@ class Manager(object):
         self.__update_cache = [] # cache of tuple('what', 'symbol', 'when')
 
         # initialize our data managers and subscribe to update events
-        self._historical_reader = historicalmanager.DataReader()
-        self._historical_updater = historicalmanager.DataUpdater(self._db)
+        self._historical_reader = historical.Reader()
+        self._historical_updater = historical.Updater(self._db)
         self.__historical_updated_handler = \
             self._historical_updater.get_symbol_updated_handler()
         self.__historical_updated_handler.subscribe(

@@ -30,7 +30,7 @@ from pytradelib import observer
 
 '''
 The historical parsing code is implemented as a pluggable generator pipeline:
-[See DataReader.__get_bars() and DataUpdater.__update_symbols() for the code.
+[See Reader.__get_bars() and Updater.__update_symbols() for the code.
 Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
 
     Initialize the generator pipeline with an Instrument or [Instruments]
@@ -38,14 +38,14 @@ Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
         V
     file_path(s) -> file_open -> file_to_rows_reader -> row_filter -> parser/drain 
                                                                         |
-    Return values from DataReader.get_X_bars():                         V
-                            for Instrument --------------> [list of bar.Bar]
-                            for Instruments --> {"symbol": [list of bar.Bar]}
+    Return values from Reader.get_X_bars():                             V
+                              for Instrument --------------> [list of bar.Bar]
+                              for Instruments --> {"symbol": [list of bar.Bar]}
 
 
-It is used by creating an instance of the DataReader class. Some examples:
+It is used by creating an instance of the Reader class. Some examples:
     symbols =  # > 5K symbols (!)
-    parser = DataReader()
+    parser = Reader()
     bars = parser.get_bars_dict(symbols)
     bars = parser.get_newest_bars_dict(symbols)
     bars = parser.get_oldest_bars_dict(symbols)
@@ -204,7 +204,7 @@ def _get_data_provider(data_provider):
     return provider_module.Provider()
 
 
-class DataReader(object):
+class Reader(object):
     def __init__(self):
         self.set_data_provider(settings.DATA_STORE_FORMAT)
 
@@ -284,7 +284,7 @@ class DataReader(object):
         return ret
 
 
-class DataUpdater(object):
+class Updater(object):
     def __init__(self, db):
         self._updated_event = observer.Event()
         self._db = db
