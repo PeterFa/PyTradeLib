@@ -19,15 +19,16 @@ import os
 import lz4
 import gzip
 import importlib
+
 import matplotlib.mlab as mlab
 
+from pytradelib import bar
 from pytradelib import utils
+from pytradelib import observer
 from pytradelib import settings
 from pytradelib.data import providers
 from pytradelib.data.failed import Symbols as FailedSymbols
 
-from pytradelib import bar
-from pytradelib import observer
 
 '''
 The historical parsing code is implemented as a pluggable generator pipeline:
@@ -35,9 +36,9 @@ The historical parsing code is implemented as a pluggable generator pipeline:
 Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
 
     Initialize the generator pipeline with an Instrument or [Instruments]
-        \
+        |
         V
-    file_path(s) -> file_open -> file_to_rows_reader -> row_filter -> parser/drain 
+ file_path(s) -> file_open -> file_to_rows_reader -> row_filter -> parser/drain
                                                                         |
     Return values from Reader.get_X_bars():                             V
                               for Instrument --------------> [list of bar.Bar]
@@ -50,7 +51,7 @@ It is used by creating an instance of the Reader class. Some examples:
     bars = parser.get_bars_dict(symbols)
     bars = parser.get_newest_bars_dict(symbols)
     bars = parser.get_oldest_bars_dict(symbols)
-    bars = parser.get_newest_and_oldest_bars(symbols[0]) # or pass a single Instrument
+    bars = parser.get_newest_and_oldest_bars(symbols[0]) # or pass an Instrument
     print bars # or do something useful
 
 '''
@@ -186,7 +187,6 @@ def process_data_to_update(data_files, provider):
         yield (new_rows, f)
 
 
-## ----- Historical Data Managers -----------------------------------------------
 class Reader(object):
     def __init__(self):
         self.set_data_provider(settings.DATA_STORE_FORMAT)

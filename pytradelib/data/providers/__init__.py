@@ -39,8 +39,10 @@ def get_data_provider(data_provider):
     return provider_module.Provider()
 
 
-## ----- Data Provider Base Class (to be subclassed by data providers) ----------
 class Provider(object):
+    '''A base class for data providers to subclass.
+    FIXME: should probably convert to ABC
+    '''
     def __init__(self):
         self.__bar_filter = None
 

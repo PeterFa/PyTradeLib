@@ -24,6 +24,16 @@ from pytradelib import settings
 
 
 class YahooFrequencyProvider(object):
+    '''
+    This class (almost) implements support for minutely bars from Yahoo. They
+    are advertised as "realtime," but obviously there are quite a few steps
+    between us, Yahoo and the source. Lag varies from <1 minute to upwards of
+    >10 minutes behind the market (though 3-5 minutes behind seems much more
+    common when things are acting sluggish).
+
+    All you need to do to finish the implementation is return a valid URL from
+    get_url() for a given symbol. See get_url() as it is now for a hint on how.
+    '''
     def __init__(self):
         self.__columns = ['DateTime', 'Close', 'High', 'Low', 'Open', 'Volume']
 
@@ -59,25 +69,28 @@ class YahooFrequencyProvider(object):
 
     @utils.lower
     def get_url(self, symbol, frequency, from_date=None):
+        url = "--> fill me in with %s's url <--" % symbol # other args unused
         raise NotImplementedError("Hint: Use Firebug in places where you "\
             "might expect AJAX calls for intraday data. Implement at your own"\
-            " risk; I'm not entirely sure what Yahoo's TOS are for using it.")
+            " risk; I'm not entirely sure what Yahoo's TOS are for using this.")
+        return url
 
     def process_downloaded_data(self, data_file_paths):
-        # minutely data has a big, multi-row header, and only comes one day at a time
-        # times are formatted in seconds from the unix epoch; convert them to datetime
+        # minutely data has a big, multi-row header and only comes one day at
+        # a time. datetimes are formatted in seconds from the unix epoch.
+
         for data, file_path in data_file_paths:
             symbol = utils.symbol_from_file_path(file_path)
             data_rows = data.strip().split('\n')
-            # grab the column labels from the middle of the header and find the start index of the data
+            # verify we got valid data and find the start index of the bar-rows
             error = False
             for i, row in enumerate(data_rows):
                 if row.startswith('error'):
                     error = True
-                    print 'error downloading minute data for %s: %s' % (
-                        symbol, data_rows[i+1][len('message:'):])
+                    print 'error downloading minute data from yahoo: %s' % \
+                        data_rows[i+1][len('message:'):]
                 elif row.startswith('volume'):
-                    # chop off the entire header so data_rows contains only bar rows
+                    # chop off the header so data_rows contains only bar-rows
                     data_rows = data_rows[i+1:]
                     break
             if error:
