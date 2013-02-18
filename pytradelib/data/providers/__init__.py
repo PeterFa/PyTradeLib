@@ -16,27 +16,37 @@
 # along with PyTradeLib.  If not, see http://www.gnu.org/licenses/
 
 import os
+import importlib
 
 from pytradelib import utils
 from pytradelib import barfeed
 from pytradelib.failed import Symbols as FailedSymbols
 
 
-def get_supported_data_providers():
-    ret = []
-    dir_ = os.path.join(os.path.dirname(__file__), 'providers')
-    for provider in os.listdir(dir_):
-        if os.path.isdir(os.path.join(dir_, provider)):
-            ret.append(provider)
-    return ret
+class ProviderFactory(object):
+    def __init__(self):
+        self.__supported = []
+        self.__cache = {}
 
-def get_data_provider(data_provider):
-    data_provider = data_provider.lower()
-    if data_provider not in get_supported_data_providers():
-        raise NotImplementedError()
-    provider_module = importlib.import_module(
-        '.'.join(['pytradelib', 'data', 'providers', data_provider]))
-    return provider_module.Provider()
+    def get_supported_data_providers(self):
+        if not self.__supported:
+            dir_ = os.path.join(os.path.dirname(__file__))
+            for provider in os.listdir(dir_):
+                if os.path.isdir(os.path.join(dir_, provider)):
+                    self.__supported.append(provider)
+        return self.__supported
+
+    def get_data_provider(self, name):
+        name = name.lower()
+        if name not in self.__cache:
+            if name not in self.get_supported_data_providers():
+                raise NotImplementedError('"%s" is not supported.' % name)
+            provider_module = importlib.import_module(
+                '.'.join(['pytradelib', 'data', 'providers', name]))
+            self.__cache[name] = provider_module.Provider()
+        return self.__cache[name]
+
+ProviderFactory = ProviderFactory()
 
 
 class Provider(object):

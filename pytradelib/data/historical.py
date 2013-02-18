@@ -18,7 +18,6 @@
 import os
 import lz4
 import gzip
-import importlib
 
 import matplotlib.mlab as mlab
 
@@ -26,7 +25,7 @@ from pytradelib import bar
 from pytradelib import utils
 from pytradelib import observer
 from pytradelib import settings
-from pytradelib.data import providers
+from pytradelib.data.providers import ProviderFactory
 from pytradelib.data.failed import Symbols as FailedSymbols
 
 
@@ -193,7 +192,7 @@ class Reader(object):
 
     def set_data_provider(self, data_provider, default_frequency=None):
         self._default_frequency = default_frequency or bar.Frequency.DAY
-        self._data_reader = providers.get_data_provider(data_provider)
+        self._data_reader = ProviderFactory.get_data_provider(data_provider)
 
     def set_bar_filter(self, bar_filter):
         self._data_reader.set_bar_filter(bar_filter)
@@ -277,10 +276,12 @@ class Updater(object):
         self._downloader_format = data_provider.lower()
         self._writer_format = data_writer.lower()
         self._default_frequency = default_frequency or bar.Frequency.DAY
-        self._data_downloader = providers.get_data_provider(self._downloader_format)
+        self._data_downloader = \
+            ProviderFactory.get_data_provider(self._downloader_format)
         self._data_writer = self._data_downloader
         if self._downloader_format != self._writer_format:
-            self._data_writer = providers.get_data_provider(self._writer_format)
+            self._data_writer = \
+                ProviderFactory.get_data_provider(self._writer_format)
 
     def get_symbol_updated_handler(self):
         return self._updated_event
