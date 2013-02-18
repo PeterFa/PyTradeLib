@@ -287,12 +287,7 @@ class Updater(object):
         return self._updated_event
 
     def initialize_symbol(self, symbol, frequency=None):
-        frequency = frequency or self._default_frequency
-        if self._data_writer.symbol_initialized(symbol, frequency):
-            print 'symbol %s already initialized!' % symbol
-            return None
-        for symbol, latest_dt in self.__update_symbols([symbol], frequency):
-            self._updated_event.emit(symbol, frequency, latest_dt)
+        self.initialize_symbols([symbol], frequency)
 
     def initialize_symbols(self, symbols, frequency=None):
         frequency = frequency or self._default_frequency
@@ -306,24 +301,17 @@ class Updater(object):
                 symbols.pop(symbols.index(symbol))
             if not symbols:
                 return None
+        display_progress = True
+        if len(symbols) is 1:
+            display_progress = False
         for symbol, latest_dt in self.__update_symbols(symbols, frequency,
-            display_progress = True,
-            sleep = 1
+            display_progress=display_progress,
+            sleep=1
         ):
             self._updated_event.emit(symbol, frequency, latest_dt)
 
     def update_symbol(self, symbol, frequency=None):
-        frequency = frequency or self._default_frequency
-        if not self._data_writer.symbol_initialized(symbol, frequency):
-            print 'symbol %s not initialized yet.' % symbol
-            return None
-        for symbol, latest_dt in self.__update_symbols([symbol], frequency,
-            operation_name = 'update',
-            open_files_function = open_files_updatable,
-            process_data_update_function = process_data_to_update,
-            init = False
-        ):
-            self._updated_event.emit(symbol, frequency, latest_dt)
+        self.update_symbols([symbol], frequency)
 
     def update_symbols(self, symbols, frequency=None):
         frequency = frequency or self._default_frequency
@@ -333,18 +321,20 @@ class Updater(object):
                 uninitialized.append(symbol)
         for symbol in uninitialized:
             symbols.pop(symbols.index(symbol))
-        
         if uninitialized:
             print 'symbols %s not initialized yet!' % uninitialized
             if not symbols:
                 return None
+        display_progress = True
+        if len(symbols) is 1:
+            display_progress = False
         for symbol, latest_dt in self.__update_symbols(symbols, frequency,
-            operation_name = 'update',
-            display_progress = True,
-            open_files_function = open_files_updatable,
-            process_data_update_function = process_data_to_update,
-            init = False,
-            sleep = 1
+            operation_name='update',
+            display_progress=display_progress,
+            open_files_function=open_files_updatable,
+            process_data_update_function=process_data_to_update,
+            init=False,
+            sleep=1
         ):
             self._updated_event.emit(symbol, frequency, latest_dt)
 
