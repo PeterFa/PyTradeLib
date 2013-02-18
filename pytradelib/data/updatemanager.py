@@ -109,11 +109,15 @@ class Manager(object):
         return True if self._db.get_updated('symbol_index') else False
 
     def index_updated(self):
+        update_day = self.__update_intervals['symbol_index']['days'][0]
+        update_time = self.__update_intervals['symbol_index']['time']
+
         last_updated = self._db.get_updated('symbol_index')
         if not last_updated:
             return False
-        update_day = self.__update_intervals['symbol_index']['days'][0]
-        update_time = self.__update_intervals['symbol_index']['time']
+        elif last_updated.weekday() == update_day:
+            return True
+
         update_date = datetime.datetime.today()
         while(update_date.weekday() > update_day): # this relies on update_day = 0
             day = update_date.day - 1
@@ -129,6 +133,7 @@ class Manager(object):
             if update_date.weekday() == update_day:
                 break
         update_date_time = datetime.datetime.combine(update_date, update_time)
+
         if last_updated < update_date_time:
             return False
         return True
@@ -139,7 +144,6 @@ class Manager(object):
 
     def _update_index(self):
         new_index = yql.SymbolIndex.get_data()
-        self._db.set_index_updated()
         all_new_symbols = [x['symbol'] for x in new_index['symbols']]
         all_existing_symbols = self._db.get_symbols()
         new_symbols = \
@@ -149,6 +153,7 @@ class Manager(object):
         for symbol in removed_symbols:
             self._db.delete_symbol(symbol)
         self.__init_or_update_index(new_index)
+        self._db.set_index_updated()
 
         # FIXME: emit these changes instead of printing them
         if new_symbols:
