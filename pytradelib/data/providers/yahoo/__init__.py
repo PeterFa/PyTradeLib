@@ -22,12 +22,12 @@ import dayweekmonth
 from pytradelib import bar
 from pytradelib import utils
 from pytradelib import settings
-from pytradelib.data import providers
+from pytradelib.data.providers import historical
 
 
-class Provider(providers.Provider):
+class Provider(historical.Provider):
     def __init__(self):
-        providers.Provider.__init__(self)
+        historical.Provider.__init__(self)
         day_week_month_manager = dayweekmonth.YahooFrequencyProvider()
         self.__managers = {
             bar.Frequency.MINUTE: minute.YahooFrequencyProvider(),
