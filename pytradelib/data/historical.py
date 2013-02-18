@@ -77,7 +77,7 @@ def convert_data_file_paths(data_file_paths, from_provider, to_provider):
         symbol, bars = from_provider.rows_to_bars(symbol, rows, frequency)
         symbol, formatted_rows = to_provider.bars_to_rows(symbol, bars, frequency)
         formatted_rows.insert(0, to_provider.get_csv_column_labels(frequency))
-        yield ('\n'.join(formatted_rows), new_file_path)
+        yield (formatted_rows, new_file_path)
 
 # FIXME: For the next 3 functions, we still read the entire file by calling symbol_rows().
 # How much is gained by reading only the first/last few lines of the file?
