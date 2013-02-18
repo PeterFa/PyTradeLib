@@ -23,6 +23,7 @@ import matplotlib.mlab as mlab
 
 from pytradelib import utils
 from pytradelib import settings
+from pytradelib.data import providers
 from pytradelib.data.failed import Symbols as FailedSymbols
 
 from pytradelib import bar
@@ -186,31 +187,13 @@ def process_data_to_update(data_files, provider):
 
 
 ## ----- Historical Data Managers -----------------------------------------------
-
-def get_supported_data_providers():
-    ret = []
-    dir_ = os.path.join(os.path.dirname(__file__), 'providers')
-    for provider in os.listdir(dir_):
-        if os.path.isdir(os.path.join(dir_, provider)):
-            ret.append(provider)
-    return ret
-
-def _get_data_provider(data_provider):
-    data_provider = data_provider.lower()
-    if data_provider not in get_supported_data_providers():
-        raise NotImplementedError()
-    provider_module = importlib.import_module(
-        '.'.join(['pytradelib', 'data', 'providers', data_provider]))
-    return provider_module.Provider()
-
-
 class Reader(object):
     def __init__(self):
         self.set_data_provider(settings.DATA_STORE_FORMAT)
 
     def set_data_provider(self, data_provider, default_frequency=None):
         self._default_frequency = default_frequency or bar.Frequency.DAY
-        self._data_reader = _get_data_provider(data_provider)
+        self._data_reader = providers.get_data_provider(data_provider)
 
     def set_bar_filter(self, bar_filter):
         self._data_reader.set_bar_filter(bar_filter)
@@ -294,10 +277,10 @@ class Updater(object):
         self._downloader_format = data_provider.lower()
         self._writer_format = data_writer.lower()
         self._default_frequency = default_frequency or bar.Frequency.DAY
-        self._data_downloader = _get_data_provider(self._downloader_format)
+        self._data_downloader = providers.get_data_provider(self._downloader_format)
         self._data_writer = self._data_downloader
         if self._downloader_format != self._writer_format:
-            self._data_writer = _get_data_provider(self._writer_format)
+            self._data_writer = providers.get_data_provider(self._writer_format)
 
     def get_symbol_updated_handler(self):
         return self._updated_event

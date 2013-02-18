@@ -22,6 +22,23 @@ from pytradelib import barfeed
 from pytradelib.failed import Symbols as FailedSymbols
 
 
+def get_supported_data_providers():
+    ret = []
+    dir_ = os.path.join(os.path.dirname(__file__), 'providers')
+    for provider in os.listdir(dir_):
+        if os.path.isdir(os.path.join(dir_, provider)):
+            ret.append(provider)
+    return ret
+
+def get_data_provider(data_provider):
+    data_provider = data_provider.lower()
+    if data_provider not in get_supported_data_providers():
+        raise NotImplementedError()
+    provider_module = importlib.import_module(
+        '.'.join(['pytradelib', 'data', 'providers', data_provider]))
+    return provider_module.Provider()
+
+
 ## ----- Data Provider Base Class (to be subclassed by data providers) ----------
 class Provider(object):
     def __init__(self):
