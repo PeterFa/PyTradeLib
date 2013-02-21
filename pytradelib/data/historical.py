@@ -290,7 +290,7 @@ class Updater(object):
         self._data_writer = ProviderFactory.get_data_provider(
                                                     self._writer_format)
 
-    def get_symbol_updated_handler(self):
+    def get_update_event_handler(self):
         return self._updated_event
 
     def initialize_symbol(self, symbol, frequency=None):
@@ -299,13 +299,16 @@ class Updater(object):
     def initialize_symbols(self, symbols, frequency=None):
         frequency = frequency or self._default_frequency
         initialized = [x for x in symbols
-                       if self._data_writer.symbol_initialized(x, frequency)]
+                       if self._data_writer.symbol_initialized(x, frequency)\
+                       or x in FailedSymbols]
         if initialized:
-            print 'symbols %s already initialized!' % initialized
+            print '%i symbols %s already initialized!' % (
+                len(initialized), initialized)
             for symbol in initialized:
                 symbols.pop(symbols.index(symbol))
-            if not symbols:
-                return None
+        if not symbols:
+            print 'no symbols to initialize.'
+            return None
         display_progress = True if len(symbols) > 1 else False
 
         for symbol, latest_dt in self.__update_symbols(symbols, frequency,
@@ -321,9 +324,11 @@ class Updater(object):
         frequency = frequency or self._default_frequency
         uninitialized = \
             [x for x in symbols
-             if not self._data_writer.symbol_initialized(symbol, frequency)]
+             if x not in FailedSymbols \
+             and not self._data_writer.symbol_initialized(x, frequency)]
         if uninitialized:
-            print 'symbols %s not initialized yet!' % uninitialized
+            print '%i symbols %s not initialized yet!' % (
+                len(uninitialized), uninitialized)
             for symbol in uninitialized:
                 symbols.pop(symbols.index(symbol))
             if not symbols:

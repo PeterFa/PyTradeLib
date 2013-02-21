@@ -81,7 +81,7 @@ class Manager(object):
         self._historical_reader = historical.Reader()
         self._historical_updater = historical.Updater(self._db)
         self.__historical_updated_handler = \
-            self._historical_updater.get_symbol_updated_handler()
+            self._historical_updater.get_update_event_handler()
         self.__historical_updated_handler.subscribe(
             self.__historical_updated_event)
 
