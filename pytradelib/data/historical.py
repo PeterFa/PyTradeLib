@@ -44,12 +44,14 @@ Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
                               for Instruments --> {"symbol": [list of bar.Bar]}
 '''
 
-def __yield_open_files(tag_file_paths, mode):
+
+def __yield_open_files(data_contexts, mode):
     '''
     :param tag_file_paths: tuple(anything, file_path_to_open)
     :param mode: any mode supported by the selected compression backend
     '''
-    for tag, file_path in tag_file_paths:
+    for data, context in data_contexts:
+        file_path = context['file_path']
         if mode == 'w':
             utils.mkdir_p(os.path.dirname(file_path))
         compression = settings.DATA_COMPRESSION
@@ -57,19 +59,20 @@ def __yield_open_files(tag_file_paths, mode):
             f = gzip.open(file_path, mode)
         elif not compression or compression == 'lz4':
             f = open(file_path, mode)
-        yield (tag, f)
+        context['_open_file'] = f
+        yield data, context
 
-def open_files_readable(symbol_file_paths):
-    for symbol_file_handle in __yield_open_files(symbol_file_paths, 'r'):
-        yield symbol_file_handle
+def open_files_readable(data_contexts):
+    for data_context in __yield_open_files(data_contexts, 'r'):
+        yield data_context
 
-def open_files_writeable(data_file_paths):
-    for data_file_handle in __yield_open_files(data_file_paths, 'w'):
-        yield data_file_handle
+def open_files_writeable(data_contexts):
+    for data_context in __yield_open_files(data_contexts, 'w'):
+        yield data_context
 
-def open_files_updatable(data_file_paths):
-    for data_file_handle in __yield_open_files(data_file_paths, 'r+'):
-        yield data_file_handle
+def open_files_updatable(data_contexts):
+    for data_context in __yield_open_files(data_contexts, 'r+'):
+        yield data_context
 
 
 def symbol_rows(symbol_files):
@@ -196,83 +199,6 @@ class Reader(object):
         return ret
 
 
-def process_data_to_initialize(data_files, provider):
-    for rows, f in data_files:
-        frequency = utils.frequency_from_file_path(f.name)
-        rows.insert(0, provider.get_csv_column_labels(frequency))
-        yield (rows, f)
-
-
-def process_data_to_convert(data_file_paths, from_provider, to_provider):
-    for rows, file_path in data_file_paths:
-        symbol = utils.symbol_from_file_path(file_path)
-        frequency = utils.frequency_from_file_path(file_path)
-        new_file_path = to_provider.get_file_path(symbol, frequency)
-        header = rows.pop(0)
-        symbol, bars = from_provider.rows_to_bars(symbol, rows, frequency)
-        symbol, new_rows = to_provider.bars_to_rows(symbol, bars, frequency)
-        new_rows.insert(0, to_provider.get_csv_column_labels(frequency))
-        yield (formatted_rows, new_file_path)
-
-
-def process_data_to_update(data_files, provider):
-    for update_rows, f in data_files:
-        # read existing data, relying on string sorting for date comparisons
-        if utils.supports_seeking(settings.DATA_COMPRESSION):
-            # read the tail of the file to rows and get newest stored datetime
-            new_rows = []
-            try: f.seek(-512, 2)
-            except IOError: f.seek(0)
-            newest_existing_datetime = f.read().split('\n')[-1].split(',')[0]
-
-        elif settings.DATA_COMPRESSION == 'lz4':
-            # read entire file to rows and get newest stored datetime
-            new_rows = lz4.loads(f.read()).strip().split('\n')
-            newest_existing_datetime = new_rows[-1].split(',')[0]
-
-        # only add new rows if row datetime is greater than stored datetime
-        for row in update_rows:
-            row_datetime = row.split(',')[0]
-            if row_datetime > newest_existing_datetime:
-                new_rows.append(row)
-
-        # seek to the proper place in the file in preparation for write_data
-        if utils.supports_seeking(settings.DATA_COMPRESSION):
-            # jump to the end of the file so we only update existing data
-            try: f.seek(-1, 2)
-            except IOError: print 'unexpected file seeking bug :(', f.name
-            # make sure there's a trailing new-line character at the end
-            last_char = f.read()
-            if last_char != '\n':
-                f.write('\n')
-        elif settings.DATA_COMPRESSION == 'lz4':
-            # jump to the beginning of the file so we rewrite everything
-            f.seek(0)
-
-        yield (new_rows, f)
-
-
-def write_data(data_files, provider):
-    for rows, f in data_files:
-        if rows:
-            symbol = utils.symbol_from_file_path(f.name)
-            frequency = utils.frequency_from_file_path(f.name)
-            latest_date_time = \
-                provider.row_to_bar(rows[-1], frequency).get_date_time()
-            data = '\n'.join(rows)
-            if settings.DATA_COMPRESSION == 'lz4':
-                data = lz4.dumps(data)
-            f.write(data)
-            f.close()
-            yield (symbol, latest_date_time)
-        else:
-            file_path = f.name
-            f.close()
-            if os.stat(file_path).st_size == 0:
-                os.remove(file_path)
-            continue
-
-
 class Updater(object):
     def __init__(self, db):
         self._updated_event = observer.Event()
@@ -306,16 +232,12 @@ class Updater(object):
                 len(initialized), initialized)
             for symbol in initialized:
                 symbols.pop(symbols.index(symbol))
+
         if not symbols:
             print 'no symbols to initialize.'
             return None
-        display_progress = True if len(symbols) > 1 else False
-
-        for symbol, latest_dt in self.__update_symbols(symbols, frequency,
-            display_progress=display_progress,
-            sleep=1
-        ):
-            self._updated_event.emit(symbol, frequency, latest_dt)
+        for context in self.__update_symbols(symbols, frequency, sleep=1):
+            self._updated_event.emit(context)
 
     def update_symbol(self, symbol, frequency=None):
         self.update_symbols([symbol], frequency)
@@ -333,23 +255,27 @@ class Updater(object):
                 symbols.pop(symbols.index(symbol))
             if not symbols:
                 return None
-        display_progress = True if len(symbols) > 1 else False
 
-        for symbol, latest_dt in self.__update_symbols(symbols, frequency,
+        for context in self.__update_symbols(symbols, frequency,
             operation_name='update',
-            display_progress=display_progress,
             open_files_function=open_files_updatable,
-            process_data_update_function=process_data_to_update,
+            process_data_update_function=self._data_writer.update_data,
             init=False,
             sleep=1
         ):
-            self._updated_event.emit(symbol, frequency, latest_dt)
+            self._updated_event.emit(context)
+
+    def __process_data_to_initialize(self, data_contexts):
+        for rows, context in data_contexts:
+            rows.insert(0, self._data_writer.get_csv_column_labels(
+                context['frequency']))
+            yield rows, context
 
     def __update_symbols(self, symbols, frequency,
         operation_name='download',
         display_progress=False,
         open_files_function=open_files_writeable,
-        process_data_update_function=process_data_to_initialize,
+        process_data_update_function=None,
         init=True,
         sleep=None
     ):
@@ -358,64 +284,81 @@ class Updater(object):
         initializing and updating symbols' data. It can display the rough
         progress of bulk operation to stdout using display_progress.
         '''
+        process_data_update_function = \
+            process_data_update_function or self.__process_data_to_initialize
         frequency = frequency or self._default_frequency
-        batch_size = 250 if frequency is not bar.Frequency.MINUTE else 500
+        batch_size = 200 if frequency is not bar.Frequency.MINUTE else 500
         sleep = sleep if frequency is not bar.Frequency.MINUTE else None
 
+        display_progress = True if len(symbols) > 1 else False
         # Load the latest stored datetime for the requested combination of
         # symbols and frequency. This doubles as a flag for init vs update.\
-        symbol_times = dict((x, None) for x in symbols)
+        symbol_contexts = [
+            (x, {'symbol': x, 'frequency': frequency, 'from_date_time': None})
+            for x in symbols]
         if frequency != bar.Frequency.MINUTE and not init:
-            symbol_times = dict(
-                (x, self._db.get_updated(bar.FrequencyToStr[frequency], x))
-                for x in symbol_times)
+            for symbol, context in symbol_contexts:
+                context['from_date_time'] = self._db.get_updated(bar.FrequencyToStr[frequency], symbol)
         elif not init:
-            symbol_times = dict((x, 1) for x in symbol_times)
+            for symbol, context in symbol_contexts:
+                context['from_date_time'] = True # set update over init
 
-        url_file_paths = [x for x in self._data_downloader.get_url_file_paths(
-                          symbol_times, frequency)]
-        if not url_file_paths:
+        url_contexts = \
+            [x for x in self._data_downloader.get_urls(symbol_contexts)]
+        if not url_contexts:
             op = ' ' if not display_progress else ' bulk '
             raise Exception('no urls returned for%s%sing historical data!' % (
                                                  op, operation_name))
         elif display_progress:
-            total_len = len(url_file_paths)
+            total_len = len(url_contexts)
             current_idx = 0
             last_pct = 0
             print 'starting bulk %s of historical data for %i symbols.' % (
                                  operation_name, total_len)
 
-        # download, process and update/save
-        for urls in utils.batch(url_file_paths, size=batch_size, sleep=sleep):
-            # pipeline for downloading data and preprocessing it
-            data_file_paths = self._data_downloader.process_downloaded_data(
-                self._data_downloader.verify_downloaded_data(
-                    utils.bulk_download(urls)), frequency)
+        for context in self.__bulk_dl_and_save(url_contexts,
+            process_data_update_function, open_files_function,
+            batch_size, sleep
+        ):
+            if display_progress:
+                current_idx += 1
+                pct = int(current_idx / (total_len + 1.0) * 100.0)
+                if pct != last_pct:
+                    last_pct = pct
+                    print '%i%%' % pct
 
-            # if necessary, convert downloaded format into a new storage format
-            if self._downloader_format != self._writer_format:
-                data_file_paths = process_data_to_convert(data_file_paths,
-                    self._data_downloader, self._data_writer)
-
-            # pipeline for opening files and saving/updating downloaded data
-            for symbol, latest_date_time in write_data(
-                process_data_update_function(
-                    open_files_function(data_file_paths),
-                    self._data_writer
-                    ),
-                self._data_writer
-            ):
-                if display_progress:
-                    current_idx += 1
-                    pct = int(current_idx / (total_len + 1.0) * 100.0)
-                    if pct != last_pct:
-                        last_pct = pct
-                        print '%i%%' % pct
-
-                yield (symbol, latest_date_time)
+            yield context
 
         if display_progress:
             if last_pct != 100:
                 print '100%'
 
-        yield (None, None) # poison pill to signal end of downloads
+    def __bulk_dl_and_save(self,
+        url_contexts,
+        process_data_update_function,
+        open_files_function,
+        batch_size=None,
+        sleep=None
+    ):
+        # download, process and update/save
+        for url_contexts in utils.batch(url_contexts, size=batch_size, sleep=sleep):
+            # pipeline for downloading data and preprocessing it
+            data_contexts = \
+                self._data_downloader.process_downloaded_data(
+                    self._data_downloader.verify_download(
+                        utils.bulk_download(url_contexts)))
+
+            # if necessary, convert downloaded format into a new storage format
+            if self._data_downloader.name != self._data_writer.name:
+                data_contexts = \
+                    self._data_downloader.convert_data(data_contexts, self._data_writer)
+
+            # drain for opening files and saving/updating downloaded data
+            for context in self._data_writer.save_data(
+                process_data_update_function(
+                    open_files_function(data_contexts))
+            ):
+                yield context
+        yield None # poison pill to signal end of downloads
+
+

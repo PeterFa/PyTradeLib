@@ -156,10 +156,14 @@ def batch(list_, size=None, sleep=None):
 
 
 ## --- downloading utils ---------------------------------------------------
-def download(url, tag=None):
-    tag = tag or url
-    tag = {'tag': tag}
-    
+def download(url, context=None):
+    context = context or {}
+    if not isinstance(context, dict):
+        print 'WARNING: context should be supplied as a dict! Converting.'
+        context = {'context': context}
+    context['url'] = url
+    context['error'] = None
+
     # try downloading the url; return on success, retry on various URLErrors and
     #  (gracefully) fail on HTTP 404 errors. unrecognized exceptions still get raised.
     while True:
@@ -167,8 +171,8 @@ def download(url, tag=None):
             response = urllib2.urlopen(url)
         except urllib2.HTTPError as e:
             if '404' in str(e):
-                tag['error'] = str(e)
-                return (None, tag)
+                context['error'] = str(e)
+                return (None, context)
             else:
                 raise e
         except (urllib2.URLError, Exception) as e:
@@ -185,14 +189,14 @@ def download(url, tag=None):
                 raise e
         else:
             data = response.read()
-            return (data, tag)
+            return (data, context)
 
-def bulk_download(urls_andor_tags_list):
+def bulk_download(urls_andor_contexts):
     '''
     :type urls_andor_tags_list: a list of urls or a list of tuple(url, tag)s
     '''
     threads = []
-    for params in urls_andor_tags_list:
+    for params in urls_andor_contexts:
         if isinstance(params, tuple):
             threads.append(gevent.spawn(download, *params))
         else:

@@ -36,6 +36,7 @@ class Provider(historical.Provider):
             bar.Frequency.MONTH: day_week_month_manager,
             }
 
+    @property
     def name(self):
         return 'Yahoo'
 
@@ -48,14 +49,22 @@ class Provider(historical.Provider):
     def bar_to_row(self, bar_, frequency):
         return self.__managers[frequency].bar_to_row(bar_)
 
-    def get_url(self, symbol, frequency, latest_date_time=None):
-        return self.__managers[frequency].get_url(symbol, frequency, latest_date_time)
+    def get_url(self, symbol, context):
+        return self.__managers[context['frequency']].get_url(symbol, context)
 
     def get_file_path(self, symbol, frequency):
         file_name = utils.get_historical_file_name(
-            symbol, frequency, self.name(), settings.DATA_COMPRESSION)
+            symbol, frequency, self.name, settings.DATA_COMPRESSION)
         return os.path.join(settings.DATA_DIR, 'symbols', file_name)
 
-    def process_downloaded_data(self, data_file_paths, frequency):
-        for data_file_path in self.__managers[frequency].process_downloaded_data(data_file_paths):
-            yield data_file_path
+    def verify_download(self, data_contexts):
+        for data, context in historical.Provider.verify_download(self, data_contexts):
+            if context['frequency'] == bar.Frequency.MINUTE:
+                if self.__managers[context['frequency']].verify_download(data, context):
+                    yield data, context
+            else:
+                yield data, context
+
+    def process_downloaded_data(self, data_contexts):
+        for data, context in data_contexts:
+            yield self.__managers[context['frequency']].process_downloaded_data(data, context)

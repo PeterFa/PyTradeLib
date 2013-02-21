@@ -17,23 +17,43 @@
 
 import os
 
+from pytradelib import bar
 from pytradelib import utils
 from pytradelib import barfeed
+from pytradelib import settings
+from pytradelib.data import providers
 from pytradelib.failed import Symbols as FailedSymbols
 
 
-class Provider(object):
-    '''A base class for data providers to subclass.
-    FIXME: should probably convert to ABC
-    '''
+class Provider(providers.Provider):
     def __init__(self):
         self.__bar_filter = None
 
+    @property
     def name(self):
         raise NotImplementedError()
 
     def set_bar_filter(self, bar_filter):
         self.__bar_filter = bar_filter
+
+    @utils.lower
+    def get_url(self, symbol, context):
+        raise NotImplementedError()
+
+    def get_urls(self, symbol_contexts):
+        for symbol, context in symbol_contexts:
+            if symbol not in FailedSymbols:
+                url = self.get_url(symbol, context)
+                context['file_path'] = self.get_file_path(symbol, context['frequency'])
+                yield url, context
+
+    @utils.lower
+    def get_file_path(self, symbol, frequency):
+        raise NotImplementedError()
+
+    def get_symbol_file_paths(self, symbols, frequency):
+        for symbol in symbols:
+            yield (symbol, self.get_file_path(symbol, frequency))
 
     @utils.lower
     def symbol_initialized(self, symbol, frequency):
@@ -97,42 +117,94 @@ class Provider(object):
             return False
         return True
 
-    def verify_downloaded_data(self, data_tags):
-        for data, tags in data_tags:
-            file_path = tags['tag']['file_path']
-            symbol = tags['tag']['symbol']
-            if 'error' in tags:
-                FailedSymbols.add_failed(symbol, tags['error'])
+    def verify_download(self, data_contexts):
+        for data, context in data_contexts:
+            if 'error' in context and context['error']:
+                FailedSymbols.add_failed(context['symbol'], context['error'])
                 continue
             else:
-                yield (data, file_path)
+                yield data, context
 
-    def process_downloaded_data(self, data_file_paths, frequency):
+    def process_downloaded_data(self, data_contexts):
         # The yielded data should be a list of csv-delimited bar-rows,
         # ordered with the oldest data at 0 and the most recent data at the end
 
         # the default implementation is to strip trailing white-space, split by
         # newlines, chop off the first row and yield. Override if necessary.
-        for data, file_path in data_file_paths:
-            yield (data.strip().split('\n')[1:], file_path)
+        for data, context in data_contexts:
+            yield (data.strip().split('\n')[1:], context)
 
-    @utils.lower
-    def get_url(self, symbol, frequency):
-        raise NotImplementedError()
+    def convert_data(self, data_contexts, to_provider):
+        for rows, context in data_contexts:
+            symbol = context['symbol']
+            frequency = context['frequency']
+            context['file_path'] = to_provider.get_file_path(symbol, frequency)
+            header = rows.pop(0)
+            symbol, bars = self.rows_to_bars(symbol, rows, frequency)
+            symbol, rows = to_provider.bars_to_rows(symbol, bars, frequency)
+            rows.insert(0, to_provider.get_csv_column_labels(frequency))
+            yield (rows, context)
 
-    @utils.lower
-    def get_file_path(self, symbol, frequency):
-        raise NotImplementedError()
+    def update_data(self, data_contexts):
+        for update_rows, context in data_contexts:
+            f = context['_open_file']
+            # read existing data, relying on string sorting for date comparisons
+            if utils.supports_seeking(settings.DATA_COMPRESSION):
+                # read the tail of the file to rows and get newest stored datetime
+                new_rows = []
+                try: f.seek(-512, 2)
+                except IOError: f.seek(0)
+                newest_existing_datetime = f.read().split('\n')[-1].split(',')[0]
 
-    def get_symbol_file_paths(self, symbols, frequency):
-        for symbol in symbols:
-            if symbol not in FailedSymbols:
-                yield (symbol, self.get_file_path(symbol, frequency))
+            elif settings.DATA_COMPRESSION == 'lz4':
+                # read entire file to rows and get newest stored datetime
+                new_rows = lz4.loads(f.read()).strip().split('\n')
+                newest_existing_datetime = new_rows[-1].split(',')[0]
 
-    def get_url_file_paths(self, symbol_times, frequency):
-        for symbol, latest_date_time in symbol_times.items():
-            if symbol not in FailedSymbols:
-                yield (self.get_url(symbol, frequency, latest_date_time), {
-                    'symbol': symbol,
-                    'file_path': self.get_file_path(symbol, frequency)
-                    })
+            # only add new rows if row datetime is greater than stored datetime
+            for row in update_rows:
+                row_datetime = row.split(',')[0]
+                if row_datetime > newest_existing_datetime:
+                    new_rows.append(row)
+
+            # seek to the proper place in the file in preparation for write_data
+            if utils.supports_seeking(settings.DATA_COMPRESSION):
+                # jump to the end of the file so we only update existing data
+                try: f.seek(-1, 2)
+                except IOError: print 'unexpected file seeking bug :(', f.name
+                # make sure there's a trailing new-line character at the end
+                last_char = f.read()
+                if last_char != '\n':
+                    f.write('\n')
+            elif settings.DATA_COMPRESSION == 'lz4':
+                # jump to the beginning of the file so we rewrite everything
+                f.seek(0)
+
+            yield (new_rows, context)
+
+    def save_data(self, data_contexts):
+        for rows, context in data_contexts:
+            f = context.pop('_open_file')
+            if rows:
+                bar_ = self.row_to_bar(
+                    rows[-1], context['frequency'])
+                if isinstance(bar_, bar.Bar):
+                    context['to_date_time'] = bar_.get_date_time()
+                else:
+                    print 'latest datetime for %s was invalid: %s' % (
+                                           context['symbol'], bar_)
+
+                data = '%s\n' % '\n'.join(rows)
+                if settings.DATA_COMPRESSION == 'lz4':
+                    data = lz4.dumps(data)
+
+                f.write(data)
+                f.close()
+                yield context
+            else:
+                file_path = f.name
+                f.close()
+                if os.stat(file_path).st_size == 0:
+                    os.remove(file_path)
+                continue
+

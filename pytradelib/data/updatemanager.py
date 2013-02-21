@@ -177,13 +177,16 @@ class Manager(object):
         self._db.insert_or_update_industries(index['industry_sectors'])
         self._db.insert_or_update_symbols(index['symbols'])
 
-    def __historical_updated_event(self, symbol, frequency, latest_dt):
-        if len(self.__update_cache) > 1000 or (symbol is None and latest_dt is None):
+    def __historical_updated_event(self, context):
+        if not context or len(self.__update_cache) > 1000:
             self._db.set_symbol_updated([
-                {'symbol_id': self._db.get_symbol_id(y), x: z}
-                for x, y, z in self.__update_cache])
+                {'symbol_id': self._db.get_symbol_id(symbol), what: when}
+                for what, symbol, when in self.__update_cache])
             self.__update_cache = []
         else:
+            symbol = context['symbol']
+            frequency = context['frequency']
+            latest_dt = context.get('to_date_time', None)
             self.__update_cache.append(
                 (bar.FrequencyToStr[frequency], symbol, latest_dt))
 

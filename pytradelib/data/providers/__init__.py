@@ -16,6 +16,7 @@
 # along with PyTradeLib.  If not, see http://www.gnu.org/licenses/
 
 import os
+import abc
 import importlib
 
 
@@ -43,3 +44,41 @@ class ProviderFactory(object):
         return self.__cache[name]
 
 ProviderFactory = ProviderFactory()
+
+
+class Provider(object):
+    '''The base class data providers should subclass.
+    '''
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractproperty
+    def name(self):
+        return
+
+    @abc.abstractmethod
+    def get_url(self, symbol, context):
+        return
+
+    @abc.abstractmethod
+    def get_urls(self, symbol_contexts):
+        yield
+
+    @abc.abstractmethod
+    def verify_download(self, data_contexts):
+        yield
+
+    @abc.abstractmethod
+    def process_downloaded_data(self, data_contexts):
+        yield
+
+    @abc.abstractmethod
+    def convert_data(self, data_contexts, other_provider):
+        yield
+
+    @abc.abstractmethod
+    def update_data(self, data_contexts):
+        yield
+
+    @abc.abstractmethod
+    def save_data(self, data_contexts):
+        yield

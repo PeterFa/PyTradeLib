@@ -21,6 +21,7 @@ import calendar
 from pytradelib import utils
 from pytradelib import bar
 from pytradelib import settings
+from pytradelib.failed import Symbols as FailedSymbols
 
 
 class YahooFrequencyProvider(object):
@@ -58,7 +59,7 @@ class YahooFrequencyProvider(object):
 
     def bar_to_row(self, bar_):
         ret = ','.join([
-            '%i' % calendar.timegm(bar_.get_date_time().timetuple()),
+            bar_.get_date_time().strftime(settings.DATE_FORMAT),
             '%.2f' % bar_.get_close(),
             '%.2f' % bar_.get_high(),
             '%.2f' % bar_.get_low(),
@@ -68,52 +69,49 @@ class YahooFrequencyProvider(object):
         return ret
 
     @utils.lower
-    def get_url(self, symbol, frequency, from_date=None):
-        url = "--> fill me in with %s's url <--" % symbol # other args unused
+    def get_url(self, symbol, context=None):
+        url = "--> fill me in with %s's url <--" % symbol # context unused
         raise NotImplementedError("Hint: Use Firebug in places where you "\
             "might expect AJAX calls for intraday data. Implement at your own"\
             " risk; I'm not entirely sure what Yahoo's TOS are for using this.")
         return url
 
-    def process_downloaded_data(self, data_file_paths):
+    def verify_download(self, data, context):
+        rows = data.strip().split('\n')
+        idx = 15 if len(rows) > 15 else len(rows)
+        for i, row in enumerate(rows[:idx]):
+            if row.startswith('error'):
+                FailedSymbols.add_failed(context['symbol'],
+                                            rows[i+1][len('message:'):])
+                return False
+        return True
+
+    def process_downloaded_data(self, data, context):
         # minutely data has a big, multi-row header and only comes one day at
         # a time. datetimes are formatted in seconds from the unix epoch.
 
-        for data, file_path in data_file_paths:
-            symbol = utils.symbol_from_file_path(file_path)
-            data_rows = data.strip().split('\n')
-            # verify we got valid data and find the start index of the bar-rows
-            error = False
-            for i, row in enumerate(data_rows):
-                if row.startswith('error'):
-                    error = True
-                    print 'error downloading minute data from yahoo: %s' % \
-                        data_rows[i+1][len('message:'):]
-                elif row.startswith('volume'):
-                    # chop off the header so data_rows contains only bar-rows
-                    data_rows = data_rows[i+1:]
-                    break
-            if error:
-                continue # FIXME: add to FailedSymbols?
+        # find the start index of the bar-rows
+        data_rows = data.strip().split('\n')
+        for i, row in enumerate(data_rows):
+            if row.startswith('volume'):
+                # chop off the header so data_rows contains only bar-rows
+                data_rows = data_rows[i+1:]
+                break
 
-            # date conversions
-            # FIXME: store in UTC
-            # FIXME: round bars to even minutes?
-            # FIXME: add "fake" missing bars?
-            #        maybe OHLC == avg prev/next closes and volume == None ?
-            try:
-                for i, row in enumerate(data_rows):
-                    columns = row.split(',')
-                    dt = datetime.datetime.fromtimestamp(int(columns[0]))
-                    columns[0] = dt.strftime(settings.DATE_FORMAT)
-                    data_rows[i] = ','.join(columns)
-            except Exception, e:
-                print 'error converting date for %s: %s' % (symbol, str(e))
-                continue # FIXME: add to FailedSymbols?
+        # date conversions
+        # FIXME: store in UTC
+        # FIXME: round bars to even minutes?
+        # FIXME: add "fake" missing bars?
+        #        maybe OHLC == avg prev/next closes and volume == None ?
+        for i, row in enumerate(data_rows):
+            columns = row.split(',')
+            dt = datetime.datetime.fromtimestamp(int(columns[0]))
+            columns[0] = dt.strftime(settings.DATE_FORMAT)
+            data_rows[i] = ','.join(columns)
 
-            now = datetime.datetime.now().time() # FIXME: UTC
-            if len(data_rows) > 1 \
-              and (datetime.time(9, 30) < now < datetime.time(16)):
-                # FIXME: emit this bar
-                latest_quote = data_rows.pop(-1)
-            yield (data_rows, file_path)
+        now = datetime.datetime.now().time() # FIXME: UTC
+        if len(data_rows) > 1 \
+            and (datetime.time(9, 30) < now < datetime.time(16)):
+            # FIXME: emit this bar
+            context['latest_quote'] = data_rows.pop(-1)
+        return data_rows, context
