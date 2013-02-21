@@ -152,13 +152,14 @@ class BaseDatabase(object):
             for d in list_of_dicts:
                 for key in remove_keys:
                     d.pop(key)
-        columns = list_of_dicts[0].keys()
-        sql = "INSERT OR REPLACE INTO %s (%s) VALUES (%s?)" % ( table_name,
-            ','.join(columns), '?,' * (len(columns) - 1))
-        def param_gen():
-            for d in list_of_dicts:
-                yield tuple(v for v in d.values())
-        self.execute_many(sql, param_gen)
+        if list_of_dicts:
+            columns = list_of_dicts[0].keys()
+            sql = "INSERT OR REPLACE INTO %s (%s) VALUES (%s?)" % ( table_name,
+                ','.join(columns), '?,' * (len(columns) - 1))
+            def param_gen():
+                for d in list_of_dicts:
+                    yield tuple(v for v in d.values())
+            self.execute_many(sql, param_gen)
 
     def execute_many(self, sql, params_generator):
         cursor = self._connection.cursor()
@@ -274,8 +275,9 @@ class Database(object):
                 raise Exception('must provide the symbol with "%s"' % what)
             sql += 'symbol_last_updated WHERE symbol_id=?'
             row = self._db.select_row(sql, (self.get_symbol_id(symbol),))
-        return datetime.datetime.strptime(row[what], settings.DATE_FORMAT)\
-            if row else None
+        if row and isinstance(row.get(what, None), str):
+            return datetime.datetime.strptime(row[what], settings.DATE_FORMAT)
+        return None
 
     def set_index_updated(self, when=None):
         when = when or datetime.datetime.now() # FIXME: UTC
@@ -284,7 +286,7 @@ class Database(object):
             'system_last_updated', [{'symbol_index': when}])
 
     def set_symbol_updated(self, list_of_dicts):
-            self._db.insert_or_update('symbol_last_updated', list_of_dicts)
+        self._db.insert_or_update('symbol_last_updated', list_of_dicts)
 
     def insert_or_update_sectors(self, sectors):
         ''' Save sectors to the db.
