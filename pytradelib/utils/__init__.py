@@ -140,7 +140,8 @@ def load_from_pickle(file_path):
 
 
 ## --- multiprocessing/threading/gevent utils ------------------------------
-def batch(list_, size=100, sleep=None):
+def batch(list_, size=None, sleep=None):
+    size = size or 100
     total_batches = len(list_)/size + 1
     for i in xrange(total_batches):
         lowerIdx = size * i
@@ -164,17 +165,20 @@ def download(url, tag=None):
     while True:
         try:
             response = urllib2.urlopen(url)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             if '404' in str(e):
                 tag['error'] = str(e)
                 return (None, tag)
             else:
                 raise e
-        except urllib2.URLError, e:
-            if 'server failed' in str(e) or 'misformatted query' in str(e):
+        except (urllib2.URLError, Exception) as e:
+            error = str(e).lower()
+            if 'server failed' in error \
+              or 'misformatted query' in error:
                 time.sleep(0.1)
                 print 'retrying download of %s' % url
-            elif 'connection reset by peer' in str(e) or 'request timed out' in str(e):
+            elif 'connection reset by peer' in error \
+              or 'request timed out' in error:
                 time.sleep(0.5)
                 print 'retrying download of %s' % url
             else:
