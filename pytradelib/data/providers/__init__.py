@@ -19,6 +19,9 @@ import os
 import abc
 import importlib
 
+from pytradelib import utils
+from pytradelib import settings
+
 
 class ProviderFactory(object):
     def __init__(self):
@@ -82,3 +85,46 @@ class Provider(object):
     @abc.abstractmethod
     def save_data(self, data_contexts):
         yield
+
+
+class OpenFilesMixin(object):
+    def __yield_open_files(self, data_contexts, mode):
+        '''
+        :param tag_file_paths: tuple(anything, file_path_to_open)
+        :param mode: any mode supported by the selected compression backend
+        '''
+        for data, context in data_contexts:
+            file_path = context['file_path']
+            if mode == 'w':
+                utils.mkdir_p(os.path.dirname(file_path))
+            compression = settings.DATA_COMPRESSION
+            if compression == 'gz':
+                f = gzip.open(file_path, mode)
+            elif not compression or compression == 'lz4':
+                f = open(file_path, mode)
+            context['_open_file'] = f
+            yield data, context
+
+    def open_files_readable(self, data_contexts):
+        for data_context in self.__yield_open_files(data_contexts, 'r'):
+            yield data_context
+
+    def open_files_writeable(self, data_contexts):
+        for data_context in self.__yield_open_files(data_contexts, 'w'):
+            yield data_context
+
+    def open_files_updatable(self, data_contexts):
+        for data_context in self.__yield_open_files(data_contexts, 'r+'):
+            yield data_context
+
+
+    def symbol_rows(symbol_files):
+        for symbol, f in symbol_files:
+            data = f.read()
+            f.close()
+            if settings.DATA_COMPRESSION == 'lz4':
+                data = lz4.loads(data)
+
+            # split the file into rows, slicing off the header labels
+            csv_rows = data.strip().split('\n')[1:]
+            yield (symbol, csv_rows)

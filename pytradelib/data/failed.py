@@ -19,6 +19,8 @@ import os
 
 from pytradelib import utils
 from pytradelib import settings
+from pytradelib.utils import printf
+
 
 class Symbols(object):
     def __init__(self):
@@ -68,27 +70,28 @@ class Symbols(object):
 
     @utils.lower
     def add_failed(self, symbol, reason_failed_msg):
-        print 'adding failed symbol: %s: %s' % (symbol, reason_failed_msg)
+        printf('adding failed symbol: %s: %s' % (symbol, reason_failed_msg))
         self.__dict[symbol] = reason_failed_msg
         self.save()
 
     @utils.lower
     def add_blacklisted(self, symbol, reason_blacklisted_msg=None):
-        print 'adding blacklisted symbol: %s: %s' % (symbol, reason_blacklisted_msg)
+        printf('adding blacklisted symbol: %s: %s' % (symbol,
+                                                      reason_blacklisted_msg))
         self.__dict[symbol] = reason_blacklisted_msg
         self.__blacklisted.append(symbol)
         self.save()
 
     @utils.lower
     def remove_failed(self, symbol):
-        print 'removing failed symbol: %s' % symbol
+        printf('removing failed symbol: %s' % symbol)
         reason_added = self.__dict.pop(symbol)
         self.save()
         return reason_added
 
     @utils.lower
     def remove_blacklisted(self, symbol):
-        print 'removing blacklisted symbol: %s' % symbol
+        printf('removing blacklisted symbol: %s' % symbol)
         self.__blacklisted.pop(self.__blacklisted.index(symbol))
         reason_added = self.__dict.pop(symbol)
         self.save()

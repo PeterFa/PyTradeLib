@@ -40,6 +40,7 @@ class BaseDatabase(object):
             ('industry_id', 'INTEGER PRIMARY KEY AUTOINCREMENT'),
             ('name', 'TEXT UNIQUE NOT NULL'),
             ('sector_id', 'INTEGER REFERENCES sector (sector_id)'),
+            ('yahoo_id', 'INTEGER UNIQUE NOT NULL'),
             ])
 
         self._symbol_columns = OrderedDict([
@@ -90,6 +91,15 @@ class BaseDatabase(object):
             ('month', 'TEXT'),
             ])
 
+        self._update_where_columns = {
+            'sector': 'name',
+            'industry': 'name',
+            'symbol': 'symbol',
+            'stats': 'symbol_id',
+            'system_last_updated': 'update_id',
+            'symbol_last_updated': 'symbol_id',
+            }
+
         if initialize:
             self._create_tables()
 
@@ -131,7 +141,7 @@ class BaseDatabase(object):
 
         # figure out the column names and order of selected results
         sql_columns, junk, select_end = sql[len('SELECT '):].replace(
-            ' from ', 'FROM ').replace(' as ', ' AS ').partition(' FROM ')
+            ' from ', ' FROM ').replace(' as ', ' AS ').partition(' FROM ')
         if ' * ' in sql:
             table_name = select_end.partition(' ')[0]
             columns = self.__getattribute__('_%s_columns' % table_name).keys()
@@ -154,12 +164,30 @@ class BaseDatabase(object):
                     d.pop(key)
         if list_of_dicts:
             columns = list_of_dicts[0].keys()
-            sql = "INSERT OR REPLACE INTO %s (%s) VALUES (%s?)" % ( table_name,
+            sql = "INSERT INTO %s (%s) VALUES (%s?)" % ( table_name,
                 ','.join(columns), '?,' * (len(columns) - 1))
+
+            if table_name == 'symbol':
+                ids = [self.get_symbol_id(x['symbol']) for x in list_of_dicts]
+                self._connection.commit()
+
             def param_gen():
                 for d in list_of_dicts:
                     yield tuple(v for v in d.values())
-            self.execute_many(sql, param_gen)
+            try:
+                self.execute_many(sql, param_gen)
+            except sqlite3.IntegrityError:
+                sql = 'UPDATE %s SET %s WHERE %s=?' % (
+                    table_name,
+                    ', '.join(['%s=?' % x for x in columns]),
+                    self._update_where_columns[table_name])
+                def update_gen():
+                    for i, t in enumerate(param_gen()):
+                        params = [x for x in t]
+                        unique_column = self._update_where_columns[table_name]
+                        params.append(list_of_dicts[i][unique_column])
+                        yield tuple(params)
+                self.execute_many(sql, update_gen)
 
     def execute_many(self, sql, params_generator):
         cursor = self._connection.cursor()
@@ -177,7 +205,7 @@ class BaseDatabase(object):
             ret = self._connection.execute(sql, (symbol,))
             # FIXME: potential optimization: shouldn't get_symbol_id() always
             # be called by somebody who will commit soon thereafter?
-            self._connection.commit()
+            #self._connection.commit()
             return ret.lastrowid
 
     def get_sector_id(self, sector):
@@ -250,6 +278,10 @@ class Database(object):
         sql = "SELECT name FROM industry"
         return [row['name'] for row in self._db.select_rows(sql)]
 
+    def get_industry_ids(self):
+        sql = 'SELECT yahoo_id from industry'
+        return [row['yahoo_id'] for row in self._db.select_rows(sql)]
+
     def get_index(self):
         sql = 'SELECT industry.name AS industry, sector.name AS sector FROM '\
             'industry JOIN sector ON (industry.sector_id = sector.sector_id)'
@@ -295,23 +327,22 @@ class Database(object):
         :type sectors: string or list of strings
         '''
         if not isinstance(sectors, list):
+            assert isinstance(sectors, str)
             sectors = [sectors]
         self._db.insert_or_update('sector', [{'name': s} for s in sectors])
 
-    def insert_or_update_industries(self, industry_sectors):
+    def insert_or_update_industries(self, industry_dicts):
         ''' Save industries to the db.
 
-        :param industry_sectors: [list of] tuple('industry name', 'sector name')
-        :type industry_sectors: [list of] tuple('industry name', 'sector name')
+        :type industry_sectors: [list of] dict(keys: name, sector, yahoo_id)
         '''
-        if not isinstance(industry_sectors, list):
-            assert(isinstance(industry_sectors, tuple))
-            assert(len(industry_sectors) == 2)
-            industry_sectors = [industry_sectors]
-        self._db.insert_or_update( 'industry', [
-            {'name': x, 'sector_id': self._db.get_sector_id(y)}
-            for x, y in industry_sectors
-            ])
+        if not isinstance(industry_dicts, list):
+            assert isinstance(industry_dicts, dict)
+            industry_dicts = [industry_dicts]
+        for d in industry_dicts:
+            if 'sector' in d:
+                d['sector_id'] = self._db.get_sector_id(d.pop('sector'))
+        self._db.insert_or_update('industry', industry_dicts)
 
     def insert_or_update_symbols(self, symbol_dicts):
         ''' Save symbols to the db.
@@ -332,12 +363,13 @@ class Database(object):
         # some of the keys in stats belong in the symbol table; separate them
         symbol_dicts = []
         for d in stats:
-            d['symbol'] = d['symbol'].lower()
-            new_d = {'symbol': d['symbol']}
+            symbol_d = {'symbol': d.pop('symbol').lower()}
+            d['symbol_id'] = self.get_symbol_id(symbol_d['symbol'])
+            symbol_d['symbol_id'] = d['symbol_id']
             for key in ['name', 'industry', 'exchange']:
                 if key in d:
-                    new_d[key] = d.pop(key)
-            symbol_dicts.append(new_d)
+                    symbol_d[key] = d.pop(key)
+            symbol_dicts.append(symbol_d)
         self.insert_or_update_symbols(symbol_dicts)
         self._db.insert_or_update('stats', stats)
 

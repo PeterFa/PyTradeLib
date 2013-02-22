@@ -22,6 +22,7 @@ from pytradelib import utils
 from pytradelib import barfeed
 from pytradelib import settings
 from pytradelib.data import providers
+from pytradelib.utils import printf
 from pytradelib.failed import Symbols as FailedSymbols
 
 
@@ -41,19 +42,23 @@ class Provider(providers.Provider):
         raise NotImplementedError()
 
     def get_urls(self, symbol_contexts):
+        ret = []
         for symbol, context in symbol_contexts:
             if symbol not in FailedSymbols:
                 url = self.get_url(symbol, context)
                 context['file_path'] = self.get_file_path(symbol, context['frequency'])
-                yield url, context
+                ret.append((url, context))
+        return ret
 
     @utils.lower
-    def get_file_path(self, symbol, frequency):
+    def get_file_path(self, symbol, context):
         raise NotImplementedError()
 
-    def get_symbol_file_paths(self, symbols, frequency):
-        for symbol in symbols:
-            yield (symbol, self.get_file_path(symbol, frequency))
+    def get_file_paths(self, symbol_contexts):
+        for symbol, context in symbol_contexts:
+            context['symbol'] = symbol
+            context['file_path'] = self.get_file_path(symbol, frequency)
+            yield symbol, context
 
     @utils.lower
     def symbol_initialized(self, symbol, frequency):
@@ -171,7 +176,7 @@ class Provider(providers.Provider):
             if utils.supports_seeking(settings.DATA_COMPRESSION):
                 # jump to the end of the file so we only update existing data
                 try: f.seek(-1, 2)
-                except IOError: print 'unexpected file seeking bug :(', f.name
+                except IOError: printf('unexpected file seeking bug :(', f.name)
                 # make sure there's a trailing new-line character at the end
                 last_char = f.read()
                 if last_char != '\n':
@@ -191,8 +196,8 @@ class Provider(providers.Provider):
                 if isinstance(bar_, bar.Bar):
                     context['to_date_time'] = bar_.get_date_time()
                 else:
-                    print 'latest datetime for %s was invalid: %s' % (
-                                           context['symbol'], bar_)
+                    printf('latest datetime for %s was invalid: %s' % (
+                                           context['symbol'], bar_))
 
                 data = '%s\n' % '\n'.join(rows)
                 if settings.DATA_COMPRESSION == 'lz4':

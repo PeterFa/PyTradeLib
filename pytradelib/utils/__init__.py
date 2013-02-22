@@ -19,6 +19,7 @@ import gevent.monkey
 gevent.monkey.patch_socket()
 
 import os
+import sys
 import errno
 import time
 import urllib2
@@ -32,6 +33,15 @@ except: import pickle
 
 from pytradelib.bar import (FrequencyToStr, StrToFrequency)
 from pytradelib import settings
+
+
+def printf(*args):
+    for i, arg in enumerate(args):
+        if len(args) > 1 and i+1 != len(args):
+            print arg,
+        else:
+            print arg
+    sys.stdout.flush()
 
 ## --- string utils ---------------------------------------------------------
 @decorator
@@ -146,6 +156,8 @@ def batch(list_, size=None, sleep=None):
     for i in xrange(total_batches):
         lowerIdx = size * i
         upperIdx = size * (i+1)
+        if upperIdx == lowerIdx or upperIdx == len(list_):
+            break
         if upperIdx <= len(list_):
             yield list_[lowerIdx:upperIdx]
         else:
@@ -159,7 +171,7 @@ def batch(list_, size=None, sleep=None):
 def download(url, context=None):
     context = context or {}
     if not isinstance(context, dict):
-        print 'WARNING: context should be supplied as a dict! Converting.'
+        printf('WARNING: context should be supplied as a dict! Converting.')
         context = {'context': context}
     context['url'] = url
     context['error'] = None
@@ -174,17 +186,18 @@ def download(url, context=None):
                 context['error'] = str(e)
                 return (None, context)
             else:
+                printf(context['url'])
                 raise e
         except (urllib2.URLError, Exception) as e:
             error = str(e).lower()
             if 'server failed' in error \
               or 'misformatted query' in error:
                 time.sleep(0.1)
-                print 'retrying download of %s' % url
+                printf('retrying download of %s' % url)
             elif 'connection reset by peer' in error \
               or 'request timed out' in error:
                 time.sleep(0.5)
-                print 'retrying download of %s' % url
+                printf('retrying download of %s' % url)
             else:
                 raise e
         else:

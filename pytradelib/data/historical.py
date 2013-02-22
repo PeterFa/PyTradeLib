@@ -16,6 +16,7 @@
 # along with PyTradeLib.  If not, see http://www.gnu.org/licenses/
 
 import os
+import sys
 import lz4
 import gzip
 
@@ -25,6 +26,8 @@ from pytradelib import bar
 from pytradelib import utils
 from pytradelib import observer
 from pytradelib import settings
+from pytradelib.utils import printf
+from pytradelib.data import providers
 from pytradelib.data.providers import ProviderFactory
 from pytradelib.data.failed import Symbols as FailedSymbols
 
@@ -44,73 +47,43 @@ Bookmark that caused this experiment: http://www.dabeaz.com/generators-uk/]
                               for Instruments --> {"symbol": [list of bar.Bar]}
 '''
 
+class CSVRowMixin(object):
+    def symbol_rows(self, symbol_contexts):
+        for symbol, context in symbol_contexts:
+            f = context.pop('_open_file')
+            data = f.read()
+            f.close()
+            if settings.DATA_COMPRESSION == 'lz4':
+                data = lz4.loads(data)
 
-def __yield_open_files(data_contexts, mode):
-    '''
-    :param tag_file_paths: tuple(anything, file_path_to_open)
-    :param mode: any mode supported by the selected compression backend
-    '''
-    for data, context in data_contexts:
-        file_path = context['file_path']
-        if mode == 'w':
-            utils.mkdir_p(os.path.dirname(file_path))
-        compression = settings.DATA_COMPRESSION
-        if compression == 'gz':
-            f = gzip.open(file_path, mode)
-        elif not compression or compression == 'lz4':
-            f = open(file_path, mode)
-        context['_open_file'] = f
-        yield data, context
+            # split the file into rows, slicing off the header labels
+            csv_rows = data.strip().split('\n')[1:]
+            yield csv_rows, context
 
-def open_files_readable(data_contexts):
-    for data_context in __yield_open_files(data_contexts, 'r'):
-        yield data_context
+    # FIXME: For the next three functions, we still read the entire file. How much
+    # is gained by reading only the first/last few lines of the file?
 
-def open_files_writeable(data_contexts):
-    for data_context in __yield_open_files(data_contexts, 'w'):
-        yield data_context
+    def newest_and_oldest_symbol_rows(self, symbol_contexts):
+        symbol_rows = self.symbol_rows(symbol_contexts)
+        for symbol, rows in symbol_rows:
+            yield ([rows[-1], rows[0]], context)
 
-def open_files_updatable(data_contexts):
-    for data_context in __yield_open_files(data_contexts, 'r+'):
-        yield data_context
+    # FIXME: For the next two functions, optionally return count bars from beg/end?
 
+    # oldest date (assumed to be the IPO date)
+    def oldest_symbol_row(self, symbol_contexts):
+        symbol_rows = self.symbol_rows(symbol_contexts)
+        for symbol, rows in symbol_rows:
+            yield ([rows[0]], context)
 
-def symbol_rows(symbol_files):
-    for symbol, f in symbol_files:
-        data = f.read()
-        f.close()
-        if settings.DATA_COMPRESSION == 'lz4':
-            data = lz4.loads(data)
-
-        # split the file into rows, slicing off the header labels
-        csv_rows = data.strip().split('\n')[1:]
-        yield (symbol, csv_rows)
+    # most recent date
+    def newest_symbol_row(self, symbol_contexts):
+        symbol_rows = self.symbol_rows(symbol_contexts)
+        for symbol, rows in symbol_rows:
+            yield ([rows[-1]], context)
 
 
-# FIXME: For the next three functions, we still read the entire file. How much
-# is gained by reading only the first/last few lines of the file?
-
-def newest_and_oldest_symbol_rows(symbol_files):
-    symbol_rows_ = symbol_rows(symbol_files)
-    for symbol, rows in symbol_rows_:
-        yield (symbol, [rows[-1], rows[0]])
-
-# FIXME: For the next two functions, optionally return count bars from beg/end?
-
-# oldest date (assumed to be the IPO date)
-def oldest_symbol_row(symbol_files):
-    symbol_rows_ = symbol_rows(symbol_files)
-    for symbol, rows in symbol_rows_:
-        yield (symbol, [rows[0]])
-
-# most recent date
-def newest_symbol_row(symbol_files):
-    symbol_rows_ = symbol_rows(symbol_files)
-    for symbol, rows in symbol_rows_:
-        yield (symbol, [rows[-1]])
-
-
-class Reader(object):
+class Reader(providers.OpenFilesMixin, CSVRowMixin):
     def __init__(self):
         self.set_data_provider(settings.DATA_STORE_FORMAT)
 
@@ -128,78 +101,87 @@ class Reader(object):
         frequency = frequency or self._default_frequency
 
         # define the pipeline
-        symbol_file_handles =  open_files_readable(
-            self._data_reader.get_symbol_file_paths(symbols, frequency) )
+        symbol_contexts = \
+            self.open_files_readable(
+                self._data_reader.get_file_paths([(symbol,
+                                                  {'frequency': frequency})
+                                                  for symbol in symbols]))
 
         # start and drain the pipeline
         ret = []
-        for symbol, f in symbol_file_handles:
+        for symbol, context in symbol_contexts:
+            f = context.pop('_open_file')
             recarray = mlab.csv2rec(f)
             recarray.sort()
             ret.append(recarray)
+            f.close()
         return ret
 
     def get_bars(self, symbol, frequency=None):
         ret = self.__get_bars(
-            [symbol], symbol_rows, frequency, use_bar_filter=True)
+            [symbol], self.symbol_rows, frequency, use_bar_filter=True)
         return ret[symbol] # return just the list of bars for the symbol
 
     def get_bars_dict(self, symbols, frequency=None):
         return self.__get_bars(
-            symbols, symbol_rows, frequency, use_bar_filter=True)
+            symbols, self.symbol_rows, frequency, use_bar_filter=True)
 
     # FIXME: are all the following public functions *really* needed?
     def get_newest_bar(self, symbol, frequency=None):
         ret = self.__get_bars(
-            [symbol], newest_symbol_row, frequency, use_bar_filter=False)
+            [symbol], self.newest_symbol_row, frequency, use_bar_filter=False)
         return ret[symbol][0] # return just the first bar for the symbol
 
     def get_newest_bars_dict(self, symbols, frequency=None):
         ret = self.__get_bars(
-            symbols, newest_symbol_row, frequency, use_bar_filter=False)
+            symbols, self.newest_symbol_row, frequency, use_bar_filter=False)
         for symbol, bars in ret.items():
             ret[symbol] = bars[0] # return just the first bar for the symbols
         return ret
 
     def get_oldest_bar(self, symbol, frequency=None):
         ret = self.__get_bars(
-            [symbol], oldest_symbol_row, frequency, use_bar_filter=False)
+            [symbol], self.oldest_symbol_row, frequency, use_bar_filter=False)
         return ret[symbol][0] # return just the last bar for the symbol
 
     def get_oldest_bars_dict(self, symbols, frequency=None):
         ret = self.__get_bars(
-            symbols, oldest_symbol_row, frequency, use_bar_filter=False)
+            symbols, self.oldest_symbol_row, frequency, use_bar_filter=False)
         for symbol, bars in ret.items():
             ret[symbol] = bars[0] # return just the last bar for the symbols
         return ret
 
     def get_newest_and_oldest_bars(self, symbol, frequency=None):
-        ret = self.__get_bars([symbol], newest_and_oldest_symbol_rows,
+        ret = self.__get_bars([symbol], self.newest_and_oldest_symbol_rows,
                                frequency, use_bar_filter=False)
         return ret[symbol] # return a list [first_bar, last_bar] for the symbol
 
     def get_newest_and_oldest_bars_dict(self, symbols, frequency=None):
-        return self.__get_bars(symbols, newest_and_oldest_symbol_rows,
+        return self.__get_bars(symbols, self.newest_and_oldest_symbol_rows,
                                frequency, use_bar_filter=False)
 
     def __get_bars(self, symbols, row_generator, frequency, use_bar_filter):
         frequency = frequency or self._default_frequency
 
         # define the pipeline
-        symbol_rows_ = row_generator( open_files_readable(
-            self._data_reader.get_symbol_file_paths(symbols, frequency)) )
+        row_contexts = \
+            row_generator(
+                self.open_files_readable(
+                    self._data_reader.get_file_paths(symbols, frequency)))
 
         # start the pipeline and and drain the results into ret
         ret = {}
-        for symbol, rows in symbol_rows_:
-            symbol, bars = self._data_reader.rows_to_bars(
-                symbol, rows, frequency, use_bar_filter)
+        for rows, context in row_contexts:
+            symbol, bars = self._data_reader.rows_to_bars(context['symbol'],
+                                                          rows,
+                                                          frequency,
+                                                          use_bar_filter)
             if bars:
                 ret[symbol] = bars
         return ret
 
 
-class Updater(object):
+class Updater(providers.OpenFilesMixin):
     def __init__(self, db):
         self._updated_event = observer.Event()
         self._db = db
@@ -228,13 +210,13 @@ class Updater(object):
                        if self._data_writer.symbol_initialized(x, frequency)\
                        or x in FailedSymbols]
         if initialized:
-            print '%i symbols %s already initialized!' % (
-                len(initialized), initialized)
+            printf('%i symbols %s already initialized!' % (
+                len(initialized), initialized))
             for symbol in initialized:
                 symbols.pop(symbols.index(symbol))
 
         if not symbols:
-            print 'no symbols to initialize.'
+            printf('no symbols to initialize.')
             return None
         for context in self.__update_symbols(symbols, frequency, sleep=1):
             self._updated_event.emit(context)
@@ -249,8 +231,8 @@ class Updater(object):
              if x not in FailedSymbols \
              and not self._data_writer.symbol_initialized(x, frequency)]
         if uninitialized:
-            print '%i symbols %s not initialized yet!' % (
-                len(uninitialized), uninitialized)
+            printf('%i symbols %s not initialized yet!' % (
+                len(uninitialized), uninitialized))
             for symbol in uninitialized:
                 symbols.pop(symbols.index(symbol))
             if not symbols:
@@ -258,7 +240,7 @@ class Updater(object):
 
         for context in self.__update_symbols(symbols, frequency,
             operation_name='update',
-            open_files_function=open_files_updatable,
+            open_files_function=self.open_files_updatable,
             process_data_update_function=self._data_writer.update_data,
             init=False,
             sleep=1
@@ -273,8 +255,7 @@ class Updater(object):
 
     def __update_symbols(self, symbols, frequency,
         operation_name='download',
-        display_progress=False,
-        open_files_function=open_files_writeable,
+        open_files_function=None,
         process_data_update_function=None,
         init=True,
         sleep=None
@@ -284,6 +265,8 @@ class Updater(object):
         initializing and updating symbols' data. It can display the rough
         progress of bulk operation to stdout using display_progress.
         '''
+        open_files_function = \
+            open_files_function or self.open_files_writeable
         process_data_update_function = \
             process_data_update_function or self.__process_data_to_initialize
         frequency = frequency or self._default_frequency
@@ -303,8 +286,7 @@ class Updater(object):
             for symbol, context in symbol_contexts:
                 context['from_date_time'] = True # set update over init
 
-        url_contexts = \
-            [x for x in self._data_downloader.get_urls(symbol_contexts)]
+        url_contexts = self._data_downloader.get_urls(symbol_contexts)
         if not url_contexts:
             op = ' ' if not display_progress else ' bulk '
             raise Exception('no urls returned for%s%sing historical data!' % (
@@ -313,8 +295,9 @@ class Updater(object):
             total_len = len(url_contexts)
             current_idx = 0
             last_pct = 0
-            print 'starting bulk %s of historical data for %i symbols.' % (
-                                 operation_name, total_len)
+            printf('starting bulk %s of historical data for %i symbols.' % (
+                                 operation_name, total_len))
+            sys.stdout.flush()
 
         for context in self.__bulk_dl_and_save(url_contexts,
             process_data_update_function, open_files_function,
@@ -325,13 +308,13 @@ class Updater(object):
                 pct = int(current_idx / (total_len + 1.0) * 100.0)
                 if pct != last_pct:
                     last_pct = pct
-                    print '%i%%' % pct
+                    printf('%i%%' % pct)
 
             yield context
 
         if display_progress:
             if last_pct != 100:
-                print '100%'
+                printf('100%')
 
     def __bulk_dl_and_save(self,
         url_contexts,
@@ -361,4 +344,14 @@ class Updater(object):
                 yield context
         yield None # poison pill to signal end of downloads
 
+class StatsUpdater(object):
+    def __init__(self):
+        self._downloader = 'YahooStats()' # FIXME
 
+    def update_stats(self, symbols):
+        urls = self._downloader.get_urls(symbols)
+        symbol_stats = \
+            self._downloader.process_downloaded_data(
+                self._downloader.verify_download(
+                    utils.bulk_download(urls)))
+        self._db.insert_or_update_stats([d for d in symbol_stats])
